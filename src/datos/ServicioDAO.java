@@ -2,32 +2,36 @@ package datos;
 
 import database.Conexion;
 import datos.interfaces.CrudSimpleInterface;
-import entidades.TipoServicio;
+import entidades.Servicio;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JOptionPane;
 
-public class TipoServicioDAO implements CrudSimpleInterface<TipoServicio> {
+public class ServicioDAO implements CrudSimpleInterface<Servicio> {
     private final Conexion CON;
     private PreparedStatement ps;
     private ResultSet rs;
     private boolean resp;
 
-    public TipoServicioDAO() {
+    public ServicioDAO() {
         CON = Conexion.getInstancia();
     }
 
     @Override
-    public List<TipoServicio> listar(String texto) {
-        List<TipoServicio> registros = new ArrayList();
+    public List<Servicio> listar(String texto) {
+        List<Servicio> registros = new ArrayList();
         try {
-            ps = CON.conectar().prepareStatement("SELECT * FROM tipo_servicio WHERE nombre LIKE ? AND activo = 1");
+            ps = CON.conectar().prepareStatement(
+                "SELECT s.*, ts.nombre as tipo FROM servicio s " +
+                "INNER JOIN tipo_servicio ts ON s.tipo_servicio_id = ts.id " +
+                "WHERE s.nombre LIKE ? AND s.activo = 1");
             ps.setString(1, "%" + texto + "%");
             rs = ps.executeQuery();
             while (rs.next()) {
-                registros.add(new TipoServicio(rs.getInt("id"), rs.getString("nombre"),
+                registros.add(new Servicio(rs.getInt("id"), rs.getInt("tipo_servicio_id"),
+                        rs.getString("codigo"), rs.getString("nombre"), rs.getDouble("precio_base"),
                         rs.getString("descripcion"), rs.getBoolean("activo")));
             }
             ps.close();
@@ -43,12 +47,15 @@ public class TipoServicioDAO implements CrudSimpleInterface<TipoServicio> {
     }
 
     @Override
-    public boolean insertar(TipoServicio obj) {
+    public boolean insertar(Servicio obj) {
         resp = false;
         try {
-            ps = CON.conectar().prepareStatement("INSERT INTO tipo_servicio (nombre, descripcion, activo) VALUES (?, ?, 1)");
-            ps.setString(1, obj.getNombre());
-            ps.setString(2, obj.getDescripcion());
+            ps = CON.conectar().prepareStatement("INSERT INTO servicio (tipo_servicio_id, codigo, nombre, precio_base, descripcion, activo) VALUES (?, ?, ?, ?, ?, 1)");
+            ps.setInt(1, obj.getTipoServicioId());
+            ps.setString(2, obj.getCodigo());
+            ps.setString(3, obj.getNombre());
+            ps.setDouble(4, obj.getPrecioBase());
+            ps.setString(5, obj.getDescripcion());
             if (ps.executeUpdate() > 0) {
                 resp = true;
             }
@@ -63,13 +70,16 @@ public class TipoServicioDAO implements CrudSimpleInterface<TipoServicio> {
     }
 
     @Override
-    public boolean actualizar(TipoServicio obj) {
+    public boolean actualizar(Servicio obj) {
         resp = false;
         try {
-            ps = CON.conectar().prepareStatement("UPDATE tipo_servicio SET nombre = ?, descripcion = ? WHERE id = ?");
-            ps.setString(1, obj.getNombre());
-            ps.setString(2, obj.getDescripcion());
-            ps.setInt(3, obj.getId());
+            ps = CON.conectar().prepareStatement("UPDATE servicio SET tipo_servicio_id = ?, codigo = ?, nombre = ?, precio_base = ?, descripcion = ? WHERE id = ?");
+            ps.setInt(1, obj.getTipoServicioId());
+            ps.setString(2, obj.getCodigo());
+            ps.setString(3, obj.getNombre());
+            ps.setDouble(4, obj.getPrecioBase());
+            ps.setString(5, obj.getDescripcion());
+            ps.setInt(6, obj.getId());
             if (ps.executeUpdate() > 0) {
                 resp = true;
             }
@@ -87,7 +97,7 @@ public class TipoServicioDAO implements CrudSimpleInterface<TipoServicio> {
     public boolean desactivar(int id) {
         resp = false;
         try {
-            ps = CON.conectar().prepareStatement("UPDATE tipo_servicio SET activo = 0 WHERE id = ?");
+            ps = CON.conectar().prepareStatement("UPDATE servicio SET activo = 0 WHERE id = ?");
             ps.setInt(1, id);
             if (ps.executeUpdate() > 0) {
                 resp = true;
@@ -106,7 +116,7 @@ public class TipoServicioDAO implements CrudSimpleInterface<TipoServicio> {
     public boolean activar(int id) {
         resp = false;
         try {
-            ps = CON.conectar().prepareStatement("UPDATE tipo_servicio SET activo = 1 WHERE id = ?");
+            ps = CON.conectar().prepareStatement("UPDATE servicio SET activo = 1 WHERE id = ?");
             ps.setInt(1, id);
             if (ps.executeUpdate() > 0) {
                 resp = true;
@@ -125,7 +135,7 @@ public class TipoServicioDAO implements CrudSimpleInterface<TipoServicio> {
     public int total() {
         int totalRegistros = 0;
         try {
-            ps = CON.conectar().prepareStatement("SELECT COUNT(id) FROM tipo_servicio WHERE activo = 1");
+            ps = CON.conectar().prepareStatement("SELECT COUNT(id) FROM servicio WHERE activo = 1");
             rs = ps.executeQuery();
             if (rs.next()) {
                 totalRegistros = rs.getInt(1);
@@ -146,7 +156,7 @@ public class TipoServicioDAO implements CrudSimpleInterface<TipoServicio> {
     public boolean existe(String texto) {
         resp = false;
         try {
-            ps = CON.conectar().prepareStatement("SELECT nombre FROM tipo_servicio WHERE nombre = ?");
+            ps = CON.conectar().prepareStatement("SELECT nombre FROM servicio WHERE nombre = ?");
             ps.setString(1, texto);
             rs = ps.executeQuery();
             if (rs.next()) {
