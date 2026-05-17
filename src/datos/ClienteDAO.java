@@ -194,4 +194,25 @@ public class ClienteDAO {
         }
         return resp;
     }
+
+   public boolean existePorDocumento(String numDocumento) {
+    boolean resp = false;
+    try {
+        ps = CON.conectar().prepareStatement("SELECT num_documento FROM persona WHERE num_documento = ? AND tipo_persona = 'CLIENTE'");
+        ps.setString(1, numDocumento);
+        rs = ps.executeQuery();
+        if (rs.next()) {
+            resp = true;
+        }
+        ps.close();
+        rs.close();
+    } catch (Exception e) {
+        JOptionPane.showMessageDialog(null, e.getMessage());
+    } finally {
+        ps = null;
+        rs = null;
+        CON.desconectar();
+    }
+    return resp;
+}
 }
