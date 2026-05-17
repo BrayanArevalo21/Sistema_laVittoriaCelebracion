@@ -3,7 +3,15 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
+            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/presentacion/frmCliente.java</file>
+            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/database/Conexion.java</file>
+            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/datos/ServicioDAO.java</file>
+            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/datos/PagoDAO.java</file>
+            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/datos/ClienteDAO.java</file>
+            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/presentacion/frmTipoServicio.java</file>
+            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/datos/EventoDAO.java</file>
             <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/presentacion/FrmPrincipal.java</file>
+            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/entidades/Servicio.java</file>
             <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/presentacion/frmEvento.java</file>
         </group>
     </open-files>
