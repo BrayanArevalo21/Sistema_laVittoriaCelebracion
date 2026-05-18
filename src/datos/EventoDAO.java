@@ -1,6 +1,7 @@
 package datos;
 
 import database.Conexion;
+import datos.interfaces.CrudSimpleInterface;
 import entidades.Evento;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -8,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JOptionPane;
 
-public class EventoDAO {
+public class EventoDAO implements CrudSimpleInterface<Evento> {
     private final Conexion CON;
     private PreparedStatement ps;
     private ResultSet rs;
@@ -18,6 +19,7 @@ public class EventoDAO {
         CON = Conexion.getInstancia();
     }
 
+    @Override
     public List<Evento> listar(String texto) {
         List<Evento> registros = new ArrayList();
         try {
@@ -54,6 +56,136 @@ public class EventoDAO {
         return registros;
     }
 
+    @Override
+    public boolean insertar(Evento obj) {
+        resp = false;
+        try {
+            ps = CON.conectar().prepareStatement(
+                "INSERT INTO evento (cliente_id, nombre_evento, fecha_evento, lugar_evento, " +
+                "numero_invitados, presupuesto_total, estado, activo, fecha_registro) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, 1, NOW())"
+            );
+            ps.setInt(1, obj.getClienteId());
+            ps.setString(2, obj.getNombreEvento());
+            ps.setString(3, obj.getFechaEvento());
+            ps.setString(4, obj.getLugarEvento());
+            ps.setInt(5, obj.getNumeroInvitados());
+            ps.setDouble(6, obj.getPresupuestoTotal());
+            ps.setString(7, obj.getEstado());
+            if (ps.executeUpdate() > 0) resp = true;
+            ps.close();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, e.getMessage());
+        } finally {
+            ps = null;
+            CON.desconectar();
+        }
+        return resp;
+    }
+
+    @Override
+    public boolean actualizar(Evento obj) {
+        resp = false;
+        try {
+            ps = CON.conectar().prepareStatement(
+                "UPDATE evento SET cliente_id=?, nombre_evento=?, fecha_evento=?, lugar_evento=?, " +
+                "numero_invitados=?, presupuesto_total=?, estado=? WHERE id=?"
+            );
+            ps.setInt(1, obj.getClienteId());
+            ps.setString(2, obj.getNombreEvento());
+            ps.setString(3, obj.getFechaEvento());
+            ps.setString(4, obj.getLugarEvento());
+            ps.setInt(5, obj.getNumeroInvitados());
+            ps.setDouble(6, obj.getPresupuestoTotal());
+            ps.setString(7, obj.getEstado());
+            ps.setInt(8, obj.getId());
+            if (ps.executeUpdate() > 0) resp = true;
+            ps.close();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, e.getMessage());
+        } finally {
+            ps = null;
+            CON.desconectar();
+        }
+        return resp;
+    }
+
+    @Override
+    public boolean desactivar(int id) {
+        resp = false;
+        try {
+            ps = CON.conectar().prepareStatement("UPDATE evento SET activo = 0 WHERE id = ?");
+            ps.setInt(1, id);
+            if (ps.executeUpdate() > 0) resp = true;
+            ps.close();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, e.getMessage());
+        } finally {
+            ps = null;
+            CON.desconectar();
+        }
+        return resp;
+    }
+
+    @Override
+    public boolean activar(int id) {
+        resp = false;
+        try {
+            ps = CON.conectar().prepareStatement("UPDATE evento SET activo = 1 WHERE id = ?");
+            ps.setInt(1, id);
+            if (ps.executeUpdate() > 0) resp = true;
+            ps.close();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, e.getMessage());
+        } finally {
+            ps = null;
+            CON.desconectar();
+        }
+        return resp;
+    }
+
+    @Override
+    public int total() {
+        int total = 0;
+        try {
+            ps = CON.conectar().prepareStatement("SELECT COUNT(*) FROM evento WHERE activo = 1");
+            rs = ps.executeQuery();
+            if (rs.next()) total = rs.getInt(1);
+            ps.close();
+            rs.close();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, e.getMessage());
+        } finally {
+            ps = null;
+            rs = null;
+            CON.desconectar();
+        }
+        return total;
+    }
+    
+    @Override
+    public boolean existe(String texto) {
+        resp = false;
+        try {
+            ps = CON.conectar().prepareStatement("SELECT nombre_evento FROM evento WHERE nombre_evento = ?");
+            ps.setString(1, texto);
+            rs = ps.executeQuery();
+            if (rs.next()) {
+                resp = true;
+            }
+            ps.close();
+            rs.close();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, e.getMessage());
+        } finally {
+            ps = null;
+            rs = null;
+            CON.desconectar();
+        }
+        return resp;
+    }
+
+    // Métodos adicionales que ya tienes y funcionan bien
     public Evento buscarPorId(int id) {
         Evento evento = null;
         try {
@@ -106,107 +238,5 @@ public class EventoDAO {
             CON.desconectar();
         }
         return presupuesto;
-    }
-
-    public boolean insertar(Evento obj) {
-        resp = false;
-        try {
-            ps = CON.conectar().prepareStatement(
-                "INSERT INTO evento (cliente_id, nombre_evento, fecha_evento, lugar_evento, " +
-                "numero_invitados, presupuesto_total, estado, activo, fecha_registro) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, 1, NOW())"
-            );
-            ps.setInt(1, obj.getClienteId());
-            ps.setString(2, obj.getNombreEvento());
-            ps.setString(3, obj.getFechaEvento());
-            ps.setString(4, obj.getLugarEvento());
-            ps.setInt(5, obj.getNumeroInvitados());
-            ps.setDouble(6, obj.getPresupuestoTotal());
-            ps.setString(7, obj.getEstado());
-            if (ps.executeUpdate() > 0) resp = true;
-            ps.close();
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, e.getMessage());
-        } finally {
-            ps = null;
-            CON.desconectar();
-        }
-        return resp;
-    }
-
-    public boolean actualizar(Evento obj) {
-        resp = false;
-        try {
-            ps = CON.conectar().prepareStatement(
-                "UPDATE evento SET cliente_id=?, nombre_evento=?, fecha_evento=?, lugar_evento=?, " +
-                "numero_invitados=?, presupuesto_total=?, estado=? WHERE id=?"
-            );
-            ps.setInt(1, obj.getClienteId());
-            ps.setString(2, obj.getNombreEvento());
-            ps.setString(3, obj.getFechaEvento());
-            ps.setString(4, obj.getLugarEvento());
-            ps.setInt(5, obj.getNumeroInvitados());
-            ps.setDouble(6, obj.getPresupuestoTotal());
-            ps.setString(7, obj.getEstado());
-            ps.setInt(8, obj.getId());
-            if (ps.executeUpdate() > 0) resp = true;
-            ps.close();
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, e.getMessage());
-        } finally {
-            ps = null;
-            CON.desconectar();
-        }
-        return resp;
-    }
-
-    public boolean desactivar(int id) {
-        resp = false;
-        try {
-            ps = CON.conectar().prepareStatement("UPDATE evento SET activo = 0 WHERE id = ?");
-            ps.setInt(1, id);
-            if (ps.executeUpdate() > 0) resp = true;
-            ps.close();
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, e.getMessage());
-        } finally {
-            ps = null;
-            CON.desconectar();
-        }
-        return resp;
-    }
-
-    public boolean activar(int id) {
-        resp = false;
-        try {
-            ps = CON.conectar().prepareStatement("UPDATE evento SET activo = 1 WHERE id = ?");
-            ps.setInt(1, id);
-            if (ps.executeUpdate() > 0) resp = true;
-            ps.close();
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, e.getMessage());
-        } finally {
-            ps = null;
-            CON.desconectar();
-        }
-        return resp;
-    }
-
-    public int total() {
-        int total = 0;
-        try {
-            ps = CON.conectar().prepareStatement("SELECT COUNT(*) FROM evento WHERE activo = 1");
-            rs = ps.executeQuery();
-            if (rs.next()) total = rs.getInt(1);
-            ps.close();
-            rs.close();
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, e.getMessage());
-        } finally {
-            ps = null;
-            rs = null;
-            CON.desconectar();
-        }
-        return total;
     }
 }
