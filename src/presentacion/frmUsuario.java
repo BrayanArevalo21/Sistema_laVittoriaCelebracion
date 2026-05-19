@@ -396,7 +396,7 @@ public class frmUsuario extends javax.swing.JInternalFrame {
         emailActual = "";
     }
     
-    // ========== NetBeans GENERA ESTO ==========
+   
     
     private void initComponentes() {
         // Pestañas

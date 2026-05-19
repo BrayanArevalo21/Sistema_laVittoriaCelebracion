@@ -4,33 +4,21 @@
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
             <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/presentacion/frmCliente.java</file>
-            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/presentacion/frmServicio.java</file>
-            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/entidades/Alimento.java</file>
-            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/datos/PersonalMontajeDAO.java</file>
-            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/entidades/Pago.java</file>
-            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/entidades/Servicio.java</file>
-            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/datos/AlimentoDAO.java</file>
-            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/presentacion/frmPago.java</file>
-            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/database/Conexion.java</file>
-            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/datos/PagoDAO.java</file>
-            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/datos/ClienteDAO.java</file>
-            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/presentacion/FrmPrincipal.java</file>
             <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/presentacion/frmAsignacionMontaje.java</file>
             <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/presentacion/frmReportePagos.java</file>
             <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/presentacion/frmRol.java</file>
-            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/datos/ServicioDAO.java</file>
-            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/presentacion/frmTipoServicio.java</file>
-            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/datos/AsignacionMontajeDAO.java</file>
-            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/datos/EventoDAO.java</file>
             <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/presentacion/frmReporteEventos.java</file>
-            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/entidades/AsignacionMontaje.java</file>
-            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/entidades/Rol.java</file>
-            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/datos/RolDAO.java</file>
-            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/entidades/Usuario.java</file>
-            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/entidades/PersonalMontaje.java</file>
-            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/datos/UsuarioDAO.java</file>
+            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/presentacion/frmServicio.java</file>
+            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/entidades/Proveedor.java</file>
+            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/presentacion/frmPago.java</file>
+            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/database/Conexion.java</file>
+            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/presentacion/frmProveedor.java</file>
+            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/presentacion/FrmTipoServicio.java</file>
+            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/datos/ProveedorDAO.java</file>
+            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/datos/TipoServicioDAO.java</file>
             <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/presentacion/frmAlimento.java</file>
             <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/presentacion/frmUsuario.java</file>
+            <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/presentacion/frmPrincipal.java</file>
             <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/presentacion/frmEvento.java</file>
             <file>file:/C:/Users/VIGIASTECH/Desktop/trabajo/Sistema_laVittoriaCelebracion/src/presentacion/frmPersonalMontaje.java</file>
         </group>

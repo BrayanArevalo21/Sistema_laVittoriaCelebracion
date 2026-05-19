@@ -369,7 +369,6 @@ public class frmAsignacionMontaje extends javax.swing.JInternalFrame {
         idActual = 0;
     }
     
-    // ========== NetBeans GENERA ESTO ==========
     
     private void initComponentes() {
         // Pestañas

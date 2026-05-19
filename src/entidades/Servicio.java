@@ -109,7 +109,7 @@ public class Servicio {
     public void setSubtotal(double subtotal) {
         this.subtotal = subtotal;
     }
-    
+
     @Override
     public String toString() {
         return "Servicio{" + "id=" + id + ", nombre=" + nombre + ", precioBase=" + precioBase + '}';

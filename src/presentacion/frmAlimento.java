@@ -1,4 +1,3 @@
-
 package presentacion;
 
 import datos.AlimentoDAO;
@@ -9,18 +8,12 @@ import javax.swing.JInternalFrame;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 
-public class frmAlimento extends javax.swing.JInternalFrame {
-
-
-
-    
-
-    private javax.swing.JTabbedPane tabGeneral;
-    
+public class frmAlimento extends JInternalFrame {
     
  
     
-    // ========== VARIABLES DE CONTROL ==========
+    
+    // Variables de control
     private AlimentoDAO dao;
     private DefaultTableModel modeloTabla;
     private String accion;
@@ -29,7 +22,8 @@ public class frmAlimento extends javax.swing.JInternalFrame {
     private DecimalFormat formatoCOP = new DecimalFormat("#,###");
     
     public frmAlimento() {
-        initComponentes();
+        initComponents();
+        configurarEventos();
         iniciar();
         setVisible(true);
     }
@@ -51,15 +45,22 @@ public class frmAlimento extends javax.swing.JInternalFrame {
         // Configurar JComboBoxes
         configurarCombos();
         
+        // Configurar combo filtro
+        cbxFiltrado.removeAllItems();
+        cbxFiltrado.addItem("Activos");
+        cbxFiltrado.addItem("Inactivos");
+        cbxFiltrado.addItem("Todos");
+        cbxFiltrado.setSelectedIndex(0);
+        
         listar("");
-        tabGeneral.setEnabledAt(1, false);
+        jTabbedPane1.setEnabledAt(1, false);
         
         setTitle("Alimentos y Bebidas");
         setClosable(true);
         setIconifiable(true);
         setMaximizable(true);
         setResizable(true);
-        setSize(850, 650);
+        setSize(900, 650);
     }
     
     private void configurarCombos() {
@@ -84,11 +85,33 @@ public class frmAlimento extends javax.swing.JInternalFrame {
         cbxUnidadMedida.addItem("Mililitro");
     }
     
-    // ========== MÉTODOS PRINCIPALES ==========
+    private void configurarEventos() {
+        btnBuscar.addActionListener(e -> listar(txtBuscar.getText()));
+        btnNuevo.addActionListener(e -> nuevo());
+        btnEditar.addActionListener(e -> editar());
+        btnGuardar.addActionListener(e -> guardar());
+        btnCancelar.addActionListener(e -> cancelar());
+        btnActivar.addActionListener(e -> activar());
+        btnDesactivar.addActionListener(e -> desactivar());
+        cbxFiltrado.addActionListener(e -> listar(txtBuscar.getText()));  // ← AGREGADO
+        
+        tablaListado.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                int fila = tablaListado.getSelectedRow();
+                if (fila >= 0) {
+                    idActual = Integer.parseInt(tablaListado.getValueAt(fila, 0).toString());
+                    nombreActual = tablaListado.getValueAt(fila, 2).toString();
+                }
+            }
+        });
+    }
     
     private void listar(String texto) {
+        if (cbxFiltrado.getSelectedItem() == null) return;  // ← AGREGADO
+        
         modeloTabla.setRowCount(0);
-        List<Alimento> lista = dao.listar(texto);
+        String filtroEstado = cbxFiltrado.getSelectedItem().toString();  // ← AGREGADO
+        List<Alimento> lista = dao.listarConFiltro(texto, filtroEstado);  // ← MODIFICADO
         
         for (Alimento a : lista) {
             String estado = a.isActivo() ? "Activo" : "Inactivo";
@@ -105,16 +128,15 @@ public class frmAlimento extends javax.swing.JInternalFrame {
             });
         }
         
-        int total = dao.total();
-        lblTotalRegistros.setText("Total registros: " + total);
+        lblTotalRegistardos.setText("Total registros: " + lista.size());
     }
     
     private void nuevo() {
         accion = "guardar";
         limpiar();
-        tabGeneral.setEnabledAt(0, false);
-        tabGeneral.setEnabledAt(1, true);
-        tabGeneral.setSelectedIndex(1);
+        jTabbedPane1.setEnabledAt(0, false);
+        jTabbedPane1.setEnabledAt(1, true);
+        jTabbedPane1.setSelectedIndex(1);
         txtNombre.requestFocus();
     }
     
@@ -129,29 +151,32 @@ public class frmAlimento extends javax.swing.JInternalFrame {
         idActual = Integer.parseInt(tablaListado.getValueAt(fila, 0).toString());
         txtId.setText(String.valueOf(idActual));
         
-        // Cargar datos del alimento
+        cbxCategoria.setSelectedItem(tablaListado.getValueAt(fila, 1).toString());
+        txtNombre.setText(tablaListado.getValueAt(fila, 2).toString());
+        
+        String precioStr = tablaListado.getValueAt(fila, 3).toString();
+        precioStr = precioStr.replace("$", "").replace(",", "").trim();
+        txtPrecioUnitario.setText(precioStr);
+        
+        String costoStr = tablaListado.getValueAt(fila, 4).toString();
+        costoStr = costoStr.replace("$", "").replace(",", "").trim();
+        txtCostoProveedor.setText(costoStr);
+        
+        nombreActual = tablaListado.getValueAt(fila, 2).toString();
+        
         Alimento alimento = dao.buscarPorId(idActual);
         if (alimento != null) {
-            // Seleccionar categoría
-            cbxCategoria.setSelectedItem(alimento.getCategoriaAlimento());
-            txtNombre.setText(alimento.getNombre());
             txtDescripcion.setText(alimento.getDescripcion());
-            txtPrecioUnitario.setText(String.valueOf(alimento.getPrecioUnitario()));
-            txtCostoProveedor.setText(String.valueOf(alimento.getCostoProveedor()));
-            
-            // Seleccionar unidad de medida
             if (alimento.getUnidadMedida() != null) {
                 cbxUnidadMedida.setSelectedItem(alimento.getUnidadMedida());
             }
-            
             chkRefrigeracion.setSelected(alimento.isRequiereRefrigeracion());
             txtAlergenos.setText(alimento.getAlergenos());
-            nombreActual = alimento.getNombre();
         }
         
-        tabGeneral.setEnabledAt(0, false);
-        tabGeneral.setEnabledAt(1, true);
-        tabGeneral.setSelectedIndex(1);
+        jTabbedPane1.setEnabledAt(0, false);
+        jTabbedPane1.setEnabledAt(1, true);
+        jTabbedPane1.setSelectedIndex(1);
         txtNombre.requestFocus();
     }
     
@@ -227,7 +252,6 @@ public class frmAlimento extends javax.swing.JInternalFrame {
         }
         
         if (accion.equals("guardar")) {
-            // Validar que no exista
             if (dao.existe(nombre)) {
                 JOptionPane.showMessageDialog(this, "Ya existe un alimento con ese nombre", "Error", JOptionPane.ERROR_MESSAGE);
                 txtNombre.requestFocus();
@@ -253,7 +277,6 @@ public class frmAlimento extends javax.swing.JInternalFrame {
                 JOptionPane.showMessageDialog(this, "Error al guardar el alimento", "Error", JOptionPane.ERROR_MESSAGE);
             }
         } else {
-            // Editar
             if (!nombre.equals(nombreActual) && dao.existe(nombre)) {
                 JOptionPane.showMessageDialog(this, "Ya existe un alimento con ese nombre", "Error", JOptionPane.ERROR_MESSAGE);
                 txtNombre.requestFocus();
@@ -292,18 +315,10 @@ public class frmAlimento extends javax.swing.JInternalFrame {
         idActual = Integer.parseInt(tablaListado.getValueAt(fila, 0).toString());
         String nombre = tablaListado.getValueAt(fila, 2).toString();
         
-        int confirm = JOptionPane.showConfirmDialog(this, 
-            "¿Desea activar el alimento: " + nombre + "?", 
-            "Confirmar", 
-            JOptionPane.YES_NO_OPTION);
-        
-        if (confirm == JOptionPane.YES_OPTION) {
-            if (dao.activar(idActual)) {
-                JOptionPane.showMessageDialog(this, "Alimento activado correctamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-                listar("");
-            } else {
-                JOptionPane.showMessageDialog(this, "Error al activar el alimento", "Error", JOptionPane.ERROR_MESSAGE);
-            }
+        int confirm = JOptionPane.showConfirmDialog(this, "¿Activar alimento: " + nombre + "?", "Confirmar", JOptionPane.YES_NO_OPTION);
+        if (confirm == JOptionPane.YES_OPTION && dao.activar(idActual)) {
+            JOptionPane.showMessageDialog(this, "Alimento activado", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            listar("");
         }
     }
     
@@ -317,30 +332,18 @@ public class frmAlimento extends javax.swing.JInternalFrame {
         idActual = Integer.parseInt(tablaListado.getValueAt(fila, 0).toString());
         String nombre = tablaListado.getValueAt(fila, 2).toString();
         
-        int confirm = JOptionPane.showConfirmDialog(this, 
-            "¿Desea desactivar el alimento: " + nombre + "?", 
-            "Confirmar", 
-            JOptionPane.YES_NO_OPTION);
-        
-        if (confirm == JOptionPane.YES_OPTION) {
-            if (dao.desactivar(idActual)) {
-                JOptionPane.showMessageDialog(this, "Alimento desactivado correctamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-                listar("");
-            } else {
-                JOptionPane.showMessageDialog(this, "Error al desactivar el alimento", "Error", JOptionPane.ERROR_MESSAGE);
-            }
+        int confirm = JOptionPane.showConfirmDialog(this, "¿Desactivar alimento: " + nombre + "?", "Confirmar", JOptionPane.YES_NO_OPTION);
+        if (confirm == JOptionPane.YES_OPTION && dao.desactivar(idActual)) {
+            JOptionPane.showMessageDialog(this, "Alimento desactivado", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            listar("");
         }
-    }
-    
-    private void buscar() {
-        listar(txtBuscar.getText());
     }
     
     private void cancelar() {
         limpiar();
-        tabGeneral.setEnabledAt(0, true);
-        tabGeneral.setEnabledAt(1, false);
-        tabGeneral.setSelectedIndex(0);
+        jTabbedPane1.setEnabledAt(0, true);
+        jTabbedPane1.setEnabledAt(1, false);
+        jTabbedPane1.setSelectedIndex(0);
         accion = "guardar";
     }
     
@@ -357,183 +360,7 @@ public class frmAlimento extends javax.swing.JInternalFrame {
         idActual = 0;
         nombreActual = "";
     }
-    
-    // ========== NetBeans GENERA ESTO ==========
-    
-    private void initComponentes() {
-        // Pestañas
-        tabGeneral = new javax.swing.JTabbedPane();
-        
-        // Panel Listado
-        javax.swing.JPanel panelListado = new javax.swing.JPanel();
-        panelListado.setLayout(null);
-        
-        lblBuscar = new javax.swing.JLabel();
-        lblBuscar.setText("Buscar:");
-        lblBuscar.setBounds(20, 20, 60, 25);
-        panelListado.add(lblBuscar);
-        
-        txtBuscar = new javax.swing.JTextField();
-        txtBuscar.setBounds(80, 20, 250, 25);
-        panelListado.add(txtBuscar);
-        
-        btnBuscar = new javax.swing.JButton();
-        btnBuscar.setText("Buscar");
-        btnBuscar.setBounds(340, 20, 100, 25);
-        btnBuscar.addActionListener(e -> buscar());
-        panelListado.add(btnBuscar);
-        
-        btnNuevo = new javax.swing.JButton();
-        btnNuevo.setText("Nuevo");
-        btnNuevo.setBounds(450, 20, 100, 25);
-        btnNuevo.addActionListener(e -> nuevo());
-        panelListado.add(btnNuevo);
-        
-        btnEditar = new javax.swing.JButton();
-        btnEditar.setText("Editar");
-        btnEditar.setBounds(560, 20, 100, 25);
-        btnEditar.addActionListener(e -> editar());
-        panelListado.add(btnEditar);
-        
-        scrollTabla = new javax.swing.JScrollPane();
-        scrollTabla.setBounds(20, 60, 790, 350);
-        tablaListado = new javax.swing.JTable();
-        scrollTabla.setViewportView(tablaListado);
-        panelListado.add(scrollTabla);
-        
-        btnActivar = new javax.swing.JButton();
-        btnActivar.setText("Activar");
-        btnActivar.setBounds(20, 430, 100, 30);
-        btnActivar.addActionListener(e -> activar());
-        panelListado.add(btnActivar);
-        
-        btnDesactivar = new javax.swing.JButton();
-        btnDesactivar.setText("Desactivar");
-        btnDesactivar.setBounds(130, 430, 100, 30);
-        btnDesactivar.addActionListener(e -> desactivar());
-        panelListado.add(btnDesactivar);
-        
-        lblTotalRegistros = new javax.swing.JLabel();
-        lblTotalRegistros.setText("Total registros: 0");
-        lblTotalRegistros.setBounds(650, 435, 200, 25);
-        panelListado.add(lblTotalRegistros);
-        
-        // Panel Mantenimiento
-        javax.swing.JPanel panelMantenimiento = new javax.swing.JPanel();
-        panelMantenimiento.setLayout(null);
-        
-        lblId = new javax.swing.JLabel();
-        lblId.setText("ID:");
-        lblId.setBounds(30, 30, 60, 25);
-        panelMantenimiento.add(lblId);
-        
-        txtId = new javax.swing.JTextField();
-        txtId.setBounds(100, 30, 80, 25);
-        txtId.setEditable(false);
-        txtId.setVisible(false);
-        panelMantenimiento.add(txtId);
-        
-        lblCategoria = new javax.swing.JLabel();
-        lblCategoria.setText("Categoría (*):");
-        lblCategoria.setBounds(30, 70, 100, 25);
-        panelMantenimiento.add(lblCategoria);
-        
-        cbxCategoria = new javax.swing.JComboBox<>();
-        cbxCategoria.setBounds(140, 70, 150, 25);
-        panelMantenimiento.add(cbxCategoria);
-        
-        lblNombre = new javax.swing.JLabel();
-        lblNombre.setText("Nombre (*):");
-        lblNombre.setBounds(30, 110, 100, 25);
-        panelMantenimiento.add(lblNombre);
-        
-        txtNombre = new javax.swing.JTextField();
-        txtNombre.setBounds(140, 110, 300, 25);
-        panelMantenimiento.add(txtNombre);
-        
-        lblDescripcion = new javax.swing.JLabel();
-        lblDescripcion.setText("Descripción:");
-        lblDescripcion.setBounds(30, 150, 100, 25);
-        panelMantenimiento.add(lblDescripcion);
-        
-        txtDescripcion = new javax.swing.JTextField();
-        txtDescripcion.setBounds(140, 150, 450, 60);
-        panelMantenimiento.add(txtDescripcion);
-        
-        lblPrecioUnitario = new javax.swing.JLabel();
-        lblPrecioUnitario.setText("Precio Unitario ($):");
-        lblPrecioUnitario.setBounds(30, 230, 120, 25);
-        panelMantenimiento.add(lblPrecioUnitario);
-        
-        txtPrecioUnitario = new javax.swing.JTextField();
-        txtPrecioUnitario.setBounds(160, 230, 150, 25);
-        panelMantenimiento.add(txtPrecioUnitario);
-        
-        lblCostoProveedor = new javax.swing.JLabel();
-        lblCostoProveedor.setText("Costo Proveedor ($):");
-        lblCostoProveedor.setBounds(30, 270, 120, 25);
-        panelMantenimiento.add(lblCostoProveedor);
-        
-        txtCostoProveedor = new javax.swing.JTextField();
-        txtCostoProveedor.setBounds(160, 270, 150, 25);
-        panelMantenimiento.add(txtCostoProveedor);
-        
-        lblUnidadMedida = new javax.swing.JLabel();
-        lblUnidadMedida.setText("Unidad Medida:");
-        lblUnidadMedida.setBounds(30, 310, 120, 25);
-        panelMantenimiento.add(lblUnidadMedida);
-        
-        cbxUnidadMedida = new javax.swing.JComboBox<>();
-        cbxUnidadMedida.setBounds(160, 310, 120, 25);
-        panelMantenimiento.add(cbxUnidadMedida);
-        
-        chkRefrigeracion = new javax.swing.JCheckBox();
-        chkRefrigeracion.setText("Requiere Refrigeración");
-        chkRefrigeracion.setBounds(160, 350, 200, 25);
-        panelMantenimiento.add(chkRefrigeracion);
-        
-        lblAlergenos = new javax.swing.JLabel();
-        lblAlergenos.setText("Alérgenos:");
-        lblAlergenos.setBounds(30, 390, 100, 25);
-        panelMantenimiento.add(lblAlergenos);
-        
-        txtAlergenos = new javax.swing.JTextField();
-        txtAlergenos.setBounds(140, 390, 300, 25);
-        panelMantenimiento.add(txtAlergenos);
-        
-        lblObligatorio = new javax.swing.JLabel();
-        lblObligatorio.setText("(*) Campo obligatorio");
-        lblObligatorio.setFont(new java.awt.Font("Arial", java.awt.Font.ITALIC, 11));
-        lblObligatorio.setBounds(140, 430, 200, 20);
-        panelMantenimiento.add(lblObligatorio);
-        
-        btnGuardar = new javax.swing.JButton();
-        btnGuardar.setText("Guardar");
-        btnGuardar.setBounds(140, 470, 100, 35);
-        btnGuardar.addActionListener(e -> guardar());
-        panelMantenimiento.add(btnGuardar);
-        
-        btnCancelar = new javax.swing.JButton();
-        btnCancelar.setText("Cancelar");
-        btnCancelar.setBounds(260, 470, 100, 35);
-        btnCancelar.addActionListener(e -> cancelar());
-        panelMantenimiento.add(btnCancelar);
-        
-        // Agregar pestañas
-        tabGeneral.addTab("Listado", panelListado);
-        tabGeneral.addTab("Mantenimiento", panelMantenimiento);
-        
-        // Layout principal
-        setLayout(new java.awt.BorderLayout());
-        add(tabGeneral, java.awt.BorderLayout.CENTER);
-        
-        pack();
-    }
-    
-    // Variables declaration (NetBeans)
-    // End of variables declaration
-
-   
+ 
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
@@ -548,7 +375,8 @@ public class frmAlimento extends javax.swing.JInternalFrame {
         tablaListado = new javax.swing.JTable();
         btnActivar = new javax.swing.JButton();
         btnDesactivar = new javax.swing.JButton();
-        lblTotalRegistros = new javax.swing.JLabel();
+        lblTotalRegistardos = new javax.swing.JLabel();
+        cbxFiltrado = new javax.swing.JComboBox<>();
         Mantenimiento = new javax.swing.JPanel();
         lblId = new javax.swing.JLabel();
         txtId = new javax.swing.JTextField();
@@ -593,7 +421,9 @@ public class frmAlimento extends javax.swing.JInternalFrame {
 
         btnDesactivar.setText("Desactivar");
 
-        lblTotalRegistros.setText("Total registros: 0");
+        lblTotalRegistardos.setText("Total registros: 0");
+
+        cbxFiltrado.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Activos", "Inactivos", "Todos" }));
 
         javax.swing.GroupLayout ListadoLayout = new javax.swing.GroupLayout(Listado);
         Listado.setLayout(ListadoLayout);
@@ -611,7 +441,9 @@ public class frmAlimento extends javax.swing.JInternalFrame {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(btnNuevo)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btnEditar))
+                        .addComponent(btnEditar)
+                        .addGap(269, 269, 269)
+                        .addComponent(cbxFiltrado, javax.swing.GroupLayout.PREFERRED_SIZE, 129, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(ListadoLayout.createSequentialGroup()
                         .addGap(14, 14, 14)
                         .addGroup(ListadoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
@@ -621,7 +453,7 @@ public class frmAlimento extends javax.swing.JInternalFrame {
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                 .addComponent(btnDesactivar)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(lblTotalRegistros)
+                                .addComponent(lblTotalRegistardos)
                                 .addGap(175, 175, 175)))))
                 .addContainerGap(31, Short.MAX_VALUE))
         );
@@ -634,14 +466,15 @@ public class frmAlimento extends javax.swing.JInternalFrame {
                     .addComponent(txtBuscar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnBuscar)
                     .addComponent(btnNuevo)
-                    .addComponent(btnEditar))
+                    .addComponent(btnEditar)
+                    .addComponent(cbxFiltrado, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addComponent(scrollTabla, javax.swing.GroupLayout.PREFERRED_SIZE, 447, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(ListadoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnActivar)
                     .addComponent(btnDesactivar)
-                    .addComponent(lblTotalRegistros))
+                    .addComponent(lblTotalRegistardos))
                 .addContainerGap(63, Short.MAX_VALUE))
         );
 
@@ -793,6 +626,7 @@ public class frmAlimento extends javax.swing.JInternalFrame {
     private javax.swing.JButton btnGuardar;
     private javax.swing.JButton btnNuevo;
     private javax.swing.JComboBox<String> cbxCategoria;
+    private javax.swing.JComboBox<String> cbxFiltrado;
     private javax.swing.JComboBox<String> cbxUnidadMedida;
     private javax.swing.JCheckBox chkRefrigeracion;
     private javax.swing.JTabbedPane jTabbedPane1;
@@ -805,7 +639,7 @@ public class frmAlimento extends javax.swing.JInternalFrame {
     private javax.swing.JLabel lblNombre;
     private javax.swing.JLabel lblObligatorio;
     private javax.swing.JLabel lblPrecioUnitario;
-    private javax.swing.JLabel lblTotalRegistros;
+    private javax.swing.JLabel lblTotalRegistardos;
     private javax.swing.JLabel lblUnidadMedida;
     private javax.swing.JScrollPane scrollTabla;
     private javax.swing.JTable tablaListado;

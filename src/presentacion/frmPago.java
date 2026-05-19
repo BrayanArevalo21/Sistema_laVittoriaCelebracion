@@ -348,7 +348,7 @@ public class frmPago extends javax.swing.JInternalFrame {
         idActual = 0;
     }
     
-    // ========== NetBeans GENERA ESTO ==========
+  
     
     private void initComponentes() {
         // Pestañas
@@ -505,9 +505,7 @@ public class frmPago extends javax.swing.JInternalFrame {
         
         pack();
     }
-    
-    // Variables declaration (NetBeans)
-    // End of variables declaration
+  
 
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {

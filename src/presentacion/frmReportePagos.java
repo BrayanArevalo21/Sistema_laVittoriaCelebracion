@@ -17,11 +17,7 @@ public class frmReportePagos extends javax.swing.JInternalFrame {
 
 
 
-    
-    // ========== COMPONENTES ==========
    
-    
-    // ========== VARIABLES DE CONTROL ==========
     private PagoDAO pagoDAO;
     private EventoDAO eventoDAO;
     private DefaultTableModel modeloTabla;
@@ -224,8 +220,7 @@ public class frmReportePagos extends javax.swing.JInternalFrame {
             JOptionPane.showMessageDialog(this, "Error al imprimir: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
-    
-    // ========== NetBeans GENERA ESTO ==========
+   
     
     private void initComponentes() {
         javax.swing.JPanel panelPrincipal = new javax.swing.JPanel();
@@ -327,9 +322,7 @@ public class frmReportePagos extends javax.swing.JInternalFrame {
         
         pack();
     }
-    
-    // Variables declaration (NetBeans)
-    // End of variables declaration
+   
 
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {

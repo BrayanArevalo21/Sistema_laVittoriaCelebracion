@@ -236,7 +236,7 @@ public class frmRol extends javax.swing.JInternalFrame {
         nombreActual = "";
     }
     
-    // ========== NetBeans GENERA ESTO ==========
+ 
     
     private void initComponentes() {
         // Pestañas
@@ -358,8 +358,7 @@ public class frmRol extends javax.swing.JInternalFrame {
         pack();
     }
     
-    // Variables declaration (NetBeans)
-    // End of variables declaration
+   
 
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {

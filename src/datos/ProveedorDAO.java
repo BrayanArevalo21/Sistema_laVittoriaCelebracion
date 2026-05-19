@@ -2,44 +2,43 @@ package datos;
 
 import database.Conexion;
 import datos.interfaces.CrudSimpleInterface;
-import entidades.PersonalMontaje;
+import entidades.Proveedor;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JOptionPane;
 
-public class PersonalMontajeDAO implements CrudSimpleInterface<PersonalMontaje> {
+public class ProveedorDAO implements CrudSimpleInterface<Proveedor> {
     private final Conexion CON;
     private PreparedStatement ps;
     private ResultSet rs;
     private boolean resp;
 
-    public PersonalMontajeDAO() {
+    public ProveedorDAO() {
         CON = Conexion.getInstancia();
     }
 
     @Override
-    public List<PersonalMontaje> listar(String texto) {
-        List<PersonalMontaje> registros = new ArrayList();
+    public List<Proveedor> listar(String texto) {
+        List<Proveedor> registros = new ArrayList();
         try {
             ps = CON.conectar().prepareStatement(
-                "SELECT * FROM personal_montaje WHERE nombre LIKE ? AND activo = 1"
+                "SELECT * FROM persona WHERE tipo_persona = 'PROVEEDOR' AND nombre LIKE ? AND activo = 1"
             );
             ps.setString(1, "%" + texto + "%");
             rs = ps.executeQuery();
             while (rs.next()) {
-                PersonalMontaje p = new PersonalMontaje();
+                Proveedor p = new Proveedor();
                 p.setId(rs.getInt("id"));
+                p.setTipoPersona(rs.getString("tipo_persona"));
                 p.setNombre(rs.getString("nombre"));
                 p.setTipoDocumento(rs.getString("tipo_documento"));
                 p.setNumDocumento(rs.getString("num_documento"));
+                p.setDireccion(rs.getString("direccion"));
                 p.setTelefono(rs.getString("telefono"));
                 p.setEmail(rs.getString("email"));
-                p.setEspecialidad(rs.getString("especialidad"));
-                p.setCostoPorHora(rs.getDouble("costo_por_hora"));
-                p.setDisponible(rs.getBoolean("disponible"));
-                p.setObservaciones(rs.getString("observaciones"));
+                p.setContacto(rs.getString("contacto"));
                 p.setActivo(rs.getBoolean("activo"));
                 registros.add(p);
             }
@@ -56,16 +55,16 @@ public class PersonalMontajeDAO implements CrudSimpleInterface<PersonalMontaje> 
     }
     
     // ========== MÉTODO CON FILTRO DE ESTADO ==========
-    public List<PersonalMontaje> listarConFiltro(String texto, String filtroEstado) {
-        List<PersonalMontaje> registros = new ArrayList();
+    public List<Proveedor> listarConFiltro(String texto, String filtroEstado) {
+        List<Proveedor> registros = new ArrayList();
         String sql = "";
         
         if (filtroEstado.equals("Activos")) {
-            sql = "SELECT * FROM personal_montaje WHERE nombre LIKE ? AND activo = 1";
+            sql = "SELECT * FROM persona WHERE tipo_persona = 'PROVEEDOR' AND nombre LIKE ? AND activo = 1";
         } else if (filtroEstado.equals("Inactivos")) {
-            sql = "SELECT * FROM personal_montaje WHERE nombre LIKE ? AND activo = 0";
+            sql = "SELECT * FROM persona WHERE tipo_persona = 'PROVEEDOR' AND nombre LIKE ? AND activo = 0";
         } else {
-            sql = "SELECT * FROM personal_montaje WHERE nombre LIKE ?";
+            sql = "SELECT * FROM persona WHERE tipo_persona = 'PROVEEDOR' AND nombre LIKE ?";
         }
         
         try {
@@ -73,17 +72,16 @@ public class PersonalMontajeDAO implements CrudSimpleInterface<PersonalMontaje> 
             ps.setString(1, "%" + texto + "%");
             rs = ps.executeQuery();
             while (rs.next()) {
-                PersonalMontaje p = new PersonalMontaje();
+                Proveedor p = new Proveedor();
                 p.setId(rs.getInt("id"));
+                p.setTipoPersona(rs.getString("tipo_persona"));
                 p.setNombre(rs.getString("nombre"));
                 p.setTipoDocumento(rs.getString("tipo_documento"));
                 p.setNumDocumento(rs.getString("num_documento"));
+                p.setDireccion(rs.getString("direccion"));
                 p.setTelefono(rs.getString("telefono"));
                 p.setEmail(rs.getString("email"));
-                p.setEspecialidad(rs.getString("especialidad"));
-                p.setCostoPorHora(rs.getDouble("costo_por_hora"));
-                p.setDisponible(rs.getBoolean("disponible"));
-                p.setObservaciones(rs.getString("observaciones"));
+                p.setContacto(rs.getString("contacto"));
                 p.setActivo(rs.getBoolean("activo"));
                 registros.add(p);
             }
@@ -100,22 +98,20 @@ public class PersonalMontajeDAO implements CrudSimpleInterface<PersonalMontaje> 
     }
 
     @Override
-    public boolean insertar(PersonalMontaje obj) {
+    public boolean insertar(Proveedor obj) {
         resp = false;
         try {
             ps = CON.conectar().prepareStatement(
-                "INSERT INTO personal_montaje (nombre, tipo_documento, num_documento, telefono, email, especialidad, costo_por_hora, disponible, observaciones, activo) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)"
+                "INSERT INTO persona (tipo_persona, nombre, tipo_documento, num_documento, direccion, telefono, email, contacto, activo) "
+                + "VALUES ('PROVEEDOR', ?, ?, ?, ?, ?, ?, ?, 1)"
             );
             ps.setString(1, obj.getNombre());
             ps.setString(2, obj.getTipoDocumento());
             ps.setString(3, obj.getNumDocumento());
-            ps.setString(4, obj.getTelefono());
-            ps.setString(5, obj.getEmail());
-            ps.setString(6, obj.getEspecialidad());
-            ps.setDouble(7, obj.getCostoPorHora());
-            ps.setBoolean(8, obj.isDisponible());
-            ps.setString(9, obj.getObservaciones());
+            ps.setString(4, obj.getDireccion());
+            ps.setString(5, obj.getTelefono());
+            ps.setString(6, obj.getEmail());
+            ps.setString(7, obj.getContacto());
             
             if (ps.executeUpdate() > 0) {
                 resp = true;
@@ -131,22 +127,20 @@ public class PersonalMontajeDAO implements CrudSimpleInterface<PersonalMontaje> 
     }
 
     @Override
-    public boolean actualizar(PersonalMontaje obj) {
+    public boolean actualizar(Proveedor obj) {
         resp = false;
         try {
             ps = CON.conectar().prepareStatement(
-                "UPDATE personal_montaje SET nombre = ?, tipo_documento = ?, num_documento = ?, telefono = ?, email = ?, especialidad = ?, costo_por_hora = ?, disponible = ?, observaciones = ? WHERE id = ?"
+                "UPDATE persona SET nombre = ?, tipo_documento = ?, num_documento = ?, direccion = ?, telefono = ?, email = ?, contacto = ? WHERE id = ?"
             );
             ps.setString(1, obj.getNombre());
             ps.setString(2, obj.getTipoDocumento());
             ps.setString(3, obj.getNumDocumento());
-            ps.setString(4, obj.getTelefono());
-            ps.setString(5, obj.getEmail());
-            ps.setString(6, obj.getEspecialidad());
-            ps.setDouble(7, obj.getCostoPorHora());
-            ps.setBoolean(8, obj.isDisponible());
-            ps.setString(9, obj.getObservaciones());
-            ps.setInt(10, obj.getId());
+            ps.setString(4, obj.getDireccion());
+            ps.setString(5, obj.getTelefono());
+            ps.setString(6, obj.getEmail());
+            ps.setString(7, obj.getContacto());
+            ps.setInt(8, obj.getId());
             
             if (ps.executeUpdate() > 0) {
                 resp = true;
@@ -165,7 +159,7 @@ public class PersonalMontajeDAO implements CrudSimpleInterface<PersonalMontaje> 
     public boolean desactivar(int id) {
         resp = false;
         try {
-            ps = CON.conectar().prepareStatement("UPDATE personal_montaje SET activo = 0 WHERE id = ?");
+            ps = CON.conectar().prepareStatement("UPDATE persona SET activo = 0 WHERE id = ?");
             ps.setInt(1, id);
             if (ps.executeUpdate() > 0) {
                 resp = true;
@@ -184,7 +178,7 @@ public class PersonalMontajeDAO implements CrudSimpleInterface<PersonalMontaje> 
     public boolean activar(int id) {
         resp = false;
         try {
-            ps = CON.conectar().prepareStatement("UPDATE personal_montaje SET activo = 1 WHERE id = ?");
+            ps = CON.conectar().prepareStatement("UPDATE persona SET activo = 1 WHERE id = ?");
             ps.setInt(1, id);
             if (ps.executeUpdate() > 0) {
                 resp = true;
@@ -203,7 +197,7 @@ public class PersonalMontajeDAO implements CrudSimpleInterface<PersonalMontaje> 
     public int total() {
         int totalRegistros = 0;
         try {
-            ps = CON.conectar().prepareStatement("SELECT COUNT(id) FROM personal_montaje WHERE activo = 1");
+            ps = CON.conectar().prepareStatement("SELECT COUNT(id) FROM persona WHERE tipo_persona = 'PROVEEDOR' AND activo = 1");
             rs = ps.executeQuery();
             if (rs.next()) {
                 totalRegistros = rs.getInt(1);
@@ -224,7 +218,7 @@ public class PersonalMontajeDAO implements CrudSimpleInterface<PersonalMontaje> 
     public boolean existe(String texto) {
         resp = false;
         try {
-            ps = CON.conectar().prepareStatement("SELECT nombre FROM personal_montaje WHERE nombre = ?");
+            ps = CON.conectar().prepareStatement("SELECT nombre FROM persona WHERE nombre = ? AND tipo_persona = 'PROVEEDOR'");
             ps.setString(1, texto);
             rs = ps.executeQuery();
             if (rs.next()) {
@@ -246,7 +240,7 @@ public class PersonalMontajeDAO implements CrudSimpleInterface<PersonalMontaje> 
     public boolean existePorDocumento(String numDocumento) {
         resp = false;
         try {
-            ps = CON.conectar().prepareStatement("SELECT num_documento FROM personal_montaje WHERE num_documento = ?");
+            ps = CON.conectar().prepareStatement("SELECT num_documento FROM persona WHERE num_documento = ? AND tipo_persona = 'PROVEEDOR'");
             ps.setString(1, numDocumento);
             rs = ps.executeQuery();
             if (rs.next()) {
@@ -265,25 +259,24 @@ public class PersonalMontajeDAO implements CrudSimpleInterface<PersonalMontaje> 
     }
     
     // Método adicional: buscarPorId
-    public PersonalMontaje buscarPorId(int id) {
-        PersonalMontaje personal = null;
+    public Proveedor buscarPorId(int id) {
+        Proveedor proveedor = null;
         try {
-            ps = CON.conectar().prepareStatement("SELECT * FROM personal_montaje WHERE id = ?");
+            ps = CON.conectar().prepareStatement("SELECT * FROM persona WHERE id = ? AND tipo_persona = 'PROVEEDOR'");
             ps.setInt(1, id);
             rs = ps.executeQuery();
             if (rs.next()) {
-                personal = new PersonalMontaje();
-                personal.setId(rs.getInt("id"));
-                personal.setNombre(rs.getString("nombre"));
-                personal.setTipoDocumento(rs.getString("tipo_documento"));
-                personal.setNumDocumento(rs.getString("num_documento"));
-                personal.setTelefono(rs.getString("telefono"));
-                personal.setEmail(rs.getString("email"));
-                personal.setEspecialidad(rs.getString("especialidad"));
-                personal.setCostoPorHora(rs.getDouble("costo_por_hora"));
-                personal.setDisponible(rs.getBoolean("disponible"));
-                personal.setObservaciones(rs.getString("observaciones"));
-                personal.setActivo(rs.getBoolean("activo"));
+                proveedor = new Proveedor();
+                proveedor.setId(rs.getInt("id"));
+                proveedor.setTipoPersona(rs.getString("tipo_persona"));
+                proveedor.setNombre(rs.getString("nombre"));
+                proveedor.setTipoDocumento(rs.getString("tipo_documento"));
+                proveedor.setNumDocumento(rs.getString("num_documento"));
+                proveedor.setDireccion(rs.getString("direccion"));
+                proveedor.setTelefono(rs.getString("telefono"));
+                proveedor.setEmail(rs.getString("email"));
+                proveedor.setContacto(rs.getString("contacto"));
+                proveedor.setActivo(rs.getBoolean("activo"));
             }
             ps.close();
             rs.close();
@@ -294,34 +287,6 @@ public class PersonalMontajeDAO implements CrudSimpleInterface<PersonalMontaje> 
             rs = null;
             CON.desconectar();
         }
-        return personal;
-    }
-    
-    // Método adicional: listarDisponibles (para combos)
-    public List<PersonalMontaje> listarDisponibles() {
-        List<PersonalMontaje> registros = new ArrayList();
-        try {
-            ps = CON.conectar().prepareStatement(
-                "SELECT * FROM personal_montaje WHERE disponible = 1 AND activo = 1 ORDER BY nombre"
-            );
-            rs = ps.executeQuery();
-            while (rs.next()) {
-                PersonalMontaje p = new PersonalMontaje();
-                p.setId(rs.getInt("id"));
-                p.setNombre(rs.getString("nombre"));
-                p.setEspecialidad(rs.getString("especialidad"));
-                p.setCostoPorHora(rs.getDouble("costo_por_hora"));
-                registros.add(p);
-            }
-            ps.close();
-            rs.close();
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, e.getMessage());
-        } finally {
-            ps = null;
-            rs = null;
-            CON.desconectar();
-        }
-        return registros;
+        return proveedor;
     }
 }

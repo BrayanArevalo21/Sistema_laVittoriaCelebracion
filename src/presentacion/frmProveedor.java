@@ -1,26 +1,26 @@
 package presentacion;
 
-import datos.PersonalMontajeDAO;
-import entidades.PersonalMontaje;
-import java.text.DecimalFormat;
+import datos.ProveedorDAO;
+import entidades.Proveedor;
 import java.util.List;
 import javax.swing.JInternalFrame;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 
-public class frmPersonalMontaje extends JInternalFrame {
+public class frmProveedor extends JInternalFrame {
     
-
+  
+   
+    
     // Variables de control
-    private PersonalMontajeDAO dao;
+    private ProveedorDAO dao;
     private DefaultTableModel modeloTabla;
     private String accion;
     private int idActual;
     private String nombreActual;
     private String numDocumentoActual;
-    private DecimalFormat formatoCOP = new DecimalFormat("#,###");
     
-    public frmPersonalMontaje() {
+    public frmProveedor() {
         initComponents();
         configurarEventos();
         iniciar();
@@ -28,7 +28,7 @@ public class frmPersonalMontaje extends JInternalFrame {
     }
     
     private void iniciar() {
-        dao = new PersonalMontajeDAO();
+        dao = new ProveedorDAO();
         accion = "guardar";
         
         // Configurar modelo de tabla
@@ -38,11 +38,14 @@ public class frmPersonalMontaje extends JInternalFrame {
                 return false;
             }
         };
-        modeloTabla.setColumnIdentifiers(new String[]{"ID", "NOMBRE", "TIPO DOC", "N° DOC", "TELÉFONO", "ESPECIALIDAD", "COSTO/HORA", "DISPONIBLE", "ESTADO"});
+        modeloTabla.setColumnIdentifiers(new String[]{"ID", "NOMBRE", "TIPO DOC", "N° DOC", "TELÉFONO", "CONTACTO", "ESTADO"});
         tablaListado.setModel(modeloTabla);
         
-        // Configurar combos
-        configurarCombos();
+        // Configurar JComboBox de tipos de documento
+        cbxTipoDocumento.addItem("CC");
+        cbxTipoDocumento.addItem("CE");
+        cbxTipoDocumento.addItem("NIT");
+        cbxTipoDocumento.addItem("PASAPORTE");
         
         // Configurar combo filtro
         cbxFiltrado.removeAllItems();
@@ -54,26 +57,12 @@ public class frmPersonalMontaje extends JInternalFrame {
         listar("");
         jTabbedPane1.setEnabledAt(1, false);
         
-        setTitle("Personal de Montaje");
+        setTitle("Proveedores");
         setClosable(true);
         setIconifiable(true);
         setMaximizable(true);
         setResizable(true);
-        setSize(950, 650);
-    }
-    
-    private void configurarCombos() {
-        cbxTipoDocumento.addItem("CC");
-        cbxTipoDocumento.addItem("CE");
-        cbxTipoDocumento.addItem("PASAPORTE");
-        
-        cbxEspecialidad.addItem("Montaje");
-        cbxEspecialidad.addItem("Decoración");
-        cbxEspecialidad.addItem("Sonido");
-        cbxEspecialidad.addItem("Iluminación");
-        cbxEspecialidad.addItem("Logística");
-        cbxEspecialidad.addItem("Animación");
-        cbxEspecialidad.addItem("Seguridad");
+        setSize(850, 600);
     }
     
     private void configurarEventos() {
@@ -103,20 +92,17 @@ public class frmPersonalMontaje extends JInternalFrame {
         
         modeloTabla.setRowCount(0);
         String filtroEstado = cbxFiltrado.getSelectedItem().toString();  // ← AGREGADO
-        List<PersonalMontaje> lista = dao.listarConFiltro(texto, filtroEstado);  // ← MODIFICADO
+        List<Proveedor> lista = dao.listarConFiltro(texto, filtroEstado);  // ← MODIFICADO
         
-        for (PersonalMontaje p : lista) {
+        for (Proveedor p : lista) {
             String estado = p.isActivo() ? "Activo" : "Inactivo";
-            String disponible = p.isDisponible() ? "Sí" : "No";
             modeloTabla.addRow(new Object[]{
                 p.getId(),
                 p.getNombre(),
                 p.getTipoDocumento() != null ? p.getTipoDocumento() : "",
                 p.getNumDocumento() != null ? p.getNumDocumento() : "",
                 p.getTelefono() != null ? p.getTelefono() : "",
-                p.getEspecialidad(),
-                "$" + formatoCOP.format(p.getCostoPorHora()),
-                disponible,
+                p.getContacto() != null ? p.getContacto() : "",
                 estado
             });
         }
@@ -152,24 +138,15 @@ public class frmPersonalMontaje extends JInternalFrame {
         
         txtNumDocumento.setText(tablaListado.getValueAt(fila, 3).toString());
         txtTelefono.setText(tablaListado.getValueAt(fila, 4).toString());
-        
-        String especialidad = tablaListado.getValueAt(fila, 5).toString();
-        cbxEspecialidad.setSelectedItem(especialidad);
-        
-        String costoStr = tablaListado.getValueAt(fila, 6).toString();
-        costoStr = costoStr.replace("$", "").replace(",", "").trim();
-        txtCostoHora.setText(costoStr);
-        
-        String disponible = tablaListado.getValueAt(fila, 7).toString();
-        chkDisponible.setSelected(disponible.equals("Sí"));
+        txtContacto.setText(tablaListado.getValueAt(fila, 5).toString());
         
         nombreActual = tablaListado.getValueAt(fila, 1).toString();
         numDocumentoActual = tablaListado.getValueAt(fila, 3).toString();
         
-        PersonalMontaje personal = dao.buscarPorId(idActual);
-        if (personal != null && personal.getObservaciones() != null) {
-            txtObservaciones.setText(personal.getObservaciones());
-            txtEmail.setText(personal.getEmail() != null ? personal.getEmail() : "");
+        Proveedor proveedor = dao.buscarPorId(idActual);
+        if (proveedor != null) {
+            txtEmail.setText(proveedor.getEmail() != null ? proveedor.getEmail() : "");
+            txtDireccion.setText(proveedor.getDireccion() != null ? proveedor.getDireccion() : "");
         }
         
         jTabbedPane1.setEnabledAt(0, false);
@@ -184,11 +161,10 @@ public class frmPersonalMontaje extends JInternalFrame {
         String numDocumento = txtNumDocumento.getText().trim();
         String telefono = txtTelefono.getText().trim();
         String email = txtEmail.getText().trim();
-        String especialidad = cbxEspecialidad.getSelectedItem().toString();
-        String costoStr = txtCostoHora.getText().trim();
-        boolean disponible = chkDisponible.isSelected();
-        String observaciones = txtObservaciones.getText().trim();
+        String direccion = txtDireccion.getText().trim();
+        String contacto = txtContacto.getText().trim();
         
+        // Validaciones
         if (nombre.isEmpty()) {
             JOptionPane.showMessageDialog(this, "El nombre es obligatorio", "Error", JOptionPane.ERROR_MESSAGE);
             txtNombre.requestFocus();
@@ -201,28 +177,8 @@ public class frmPersonalMontaje extends JInternalFrame {
             return;
         }
         
-        if (costoStr.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "El costo por hora es obligatorio", "Error", JOptionPane.ERROR_MESSAGE);
-            txtCostoHora.requestFocus();
-            return;
-        }
-        
-        double costoHora;
-        try {
-            costoHora = Double.parseDouble(costoStr);
-            if (costoHora <= 0) {
-                JOptionPane.showMessageDialog(this, "El costo debe ser mayor a 0", "Error", JOptionPane.ERROR_MESSAGE);
-                txtCostoHora.requestFocus();
-                return;
-            }
-        } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "Ingrese un costo válido", "Error", JOptionPane.ERROR_MESSAGE);
-            txtCostoHora.requestFocus();
-            return;
-        }
-        
         if (numDocumento.length() > 20) {
-            JOptionPane.showMessageDialog(this, "El documento no puede tener más de 20 caracteres", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "El número de documento no puede tener más de 20 caracteres", "Error", JOptionPane.ERROR_MESSAGE);
             txtNumDocumento.requestFocus();
             return;
         }
@@ -239,76 +195,80 @@ public class frmPersonalMontaje extends JInternalFrame {
             return;
         }
         
-        if (observaciones.length() > 250) {
-            JOptionPane.showMessageDialog(this, "Las observaciones no pueden tener más de 250 caracteres", "Error", JOptionPane.ERROR_MESSAGE);
-            txtObservaciones.requestFocus();
+        if (direccion.length() > 70) {
+            JOptionPane.showMessageDialog(this, "La dirección no puede tener más de 70 caracteres", "Error", JOptionPane.ERROR_MESSAGE);
+            txtDireccion.requestFocus();
+            return;
+        }
+        
+        if (contacto.length() > 70) {
+            JOptionPane.showMessageDialog(this, "El contacto no puede tener más de 70 caracteres", "Error", JOptionPane.ERROR_MESSAGE);
+            txtContacto.requestFocus();
             return;
         }
         
         if (accion.equals("guardar")) {
             if (!numDocumento.isEmpty() && dao.existePorDocumento(numDocumento)) {
-                JOptionPane.showMessageDialog(this, "Ya existe un trabajador con ese documento", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Ya existe un proveedor con ese número de documento", "Error", JOptionPane.ERROR_MESSAGE);
                 txtNumDocumento.requestFocus();
                 return;
             }
             
             if (dao.existe(nombre)) {
-                JOptionPane.showMessageDialog(this, "Ya existe un trabajador con ese nombre", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Ya existe un proveedor con ese nombre", "Error", JOptionPane.ERROR_MESSAGE);
                 txtNombre.requestFocus();
                 return;
             }
             
-            PersonalMontaje nuevo = new PersonalMontaje();
+            Proveedor nuevo = new Proveedor();
+            nuevo.setTipoPersona("PROVEEDOR");
             nuevo.setNombre(nombre);
             nuevo.setTipoDocumento(tipoDocumento);
             nuevo.setNumDocumento(numDocumento);
             nuevo.setTelefono(telefono);
             nuevo.setEmail(email);
-            nuevo.setEspecialidad(especialidad);
-            nuevo.setCostoPorHora(costoHora);
-            nuevo.setDisponible(disponible);
-            nuevo.setObservaciones(observaciones);
+            nuevo.setDireccion(direccion);
+            nuevo.setContacto(contacto);
             nuevo.setActivo(true);
             
             if (dao.insertar(nuevo)) {
-                JOptionPane.showMessageDialog(this, "Personal guardado", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Proveedor guardado correctamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
                 listar("");
                 cancelar();
             } else {
-                JOptionPane.showMessageDialog(this, "Error al guardar", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Error al guardar el proveedor", "Error", JOptionPane.ERROR_MESSAGE);
             }
         } else {
             if (!numDocumento.equals(numDocumentoActual) && !numDocumento.isEmpty() && dao.existePorDocumento(numDocumento)) {
-                JOptionPane.showMessageDialog(this, "Ya existe un trabajador con ese documento", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Ya existe un proveedor con ese número de documento", "Error", JOptionPane.ERROR_MESSAGE);
                 txtNumDocumento.requestFocus();
                 return;
             }
             
             if (!nombre.equals(nombreActual) && dao.existe(nombre)) {
-                JOptionPane.showMessageDialog(this, "Ya existe un trabajador con ese nombre", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Ya existe un proveedor con ese nombre", "Error", JOptionPane.ERROR_MESSAGE);
                 txtNombre.requestFocus();
                 return;
             }
             
-            PersonalMontaje editar = new PersonalMontaje();
+            Proveedor editar = new Proveedor();
             editar.setId(idActual);
+            editar.setTipoPersona("PROVEEDOR");
             editar.setNombre(nombre);
             editar.setTipoDocumento(tipoDocumento);
             editar.setNumDocumento(numDocumento);
             editar.setTelefono(telefono);
             editar.setEmail(email);
-            editar.setEspecialidad(especialidad);
-            editar.setCostoPorHora(costoHora);
-            editar.setDisponible(disponible);
-            editar.setObservaciones(observaciones);
+            editar.setDireccion(direccion);
+            editar.setContacto(contacto);
             editar.setActivo(true);
             
             if (dao.actualizar(editar)) {
-                JOptionPane.showMessageDialog(this, "Personal actualizado", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Proveedor actualizado correctamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
                 listar("");
                 cancelar();
             } else {
-                JOptionPane.showMessageDialog(this, "Error al actualizar", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Error al actualizar el proveedor", "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -316,16 +276,16 @@ public class frmPersonalMontaje extends JInternalFrame {
     private void activar() {
         int fila = tablaListado.getSelectedRow();
         if (fila == -1) {
-            JOptionPane.showMessageDialog(this, "Seleccione un registro", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Seleccione un registro para activar", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
         
         idActual = Integer.parseInt(tablaListado.getValueAt(fila, 0).toString());
         String nombre = tablaListado.getValueAt(fila, 1).toString();
         
-        int confirm = JOptionPane.showConfirmDialog(this, "¿Activar: " + nombre + "?", "Confirmar", JOptionPane.YES_NO_OPTION);
+        int confirm = JOptionPane.showConfirmDialog(this, "¿Activar proveedor: " + nombre + "?", "Confirmar", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION && dao.activar(idActual)) {
-            JOptionPane.showMessageDialog(this, "Personal activado", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Proveedor activado", "Éxito", JOptionPane.INFORMATION_MESSAGE);
             listar("");
         }
     }
@@ -333,16 +293,16 @@ public class frmPersonalMontaje extends JInternalFrame {
     private void desactivar() {
         int fila = tablaListado.getSelectedRow();
         if (fila == -1) {
-            JOptionPane.showMessageDialog(this, "Seleccione un registro", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Seleccione un registro para desactivar", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
         
         idActual = Integer.parseInt(tablaListado.getValueAt(fila, 0).toString());
         String nombre = tablaListado.getValueAt(fila, 1).toString();
         
-        int confirm = JOptionPane.showConfirmDialog(this, "¿Desactivar: " + nombre + "?", "Confirmar", JOptionPane.YES_NO_OPTION);
+        int confirm = JOptionPane.showConfirmDialog(this, "¿Desactivar proveedor: " + nombre + "?", "Confirmar", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION && dao.desactivar(idActual)) {
-            JOptionPane.showMessageDialog(this, "Personal desactivado", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Proveedor desactivado", "Éxito", JOptionPane.INFORMATION_MESSAGE);
             listar("");
         }
     }
@@ -362,22 +322,19 @@ public class frmPersonalMontaje extends JInternalFrame {
         txtNumDocumento.setText("");
         txtTelefono.setText("");
         txtEmail.setText("");
-        cbxEspecialidad.setSelectedIndex(0);
-        txtCostoHora.setText("");
-        chkDisponible.setSelected(true);
-        txtObservaciones.setText("");
+        txtDireccion.setText("");
+        txtContacto.setText("");
         idActual = 0;
         nombreActual = "";
         numDocumentoActual = "";
     }
     
- 
 
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
         jTabbedPane1 = new javax.swing.JTabbedPane();
-        jPanel1 = new javax.swing.JPanel();
+        Listado = new javax.swing.JPanel();
         lblBuscar = new javax.swing.JLabel();
         txtBuscar = new javax.swing.JTextField();
         btnBuscar = new javax.swing.JButton();
@@ -402,13 +359,10 @@ public class frmPersonalMontaje extends JInternalFrame {
         txtTelefono = new javax.swing.JTextField();
         lblEmail = new javax.swing.JLabel();
         txtEmail = new javax.swing.JTextField();
-        lblEspecialidad = new javax.swing.JLabel();
-        cbxEspecialidad = new javax.swing.JComboBox<>();
-        lblCostoHora = new javax.swing.JLabel();
-        txtCostoHora = new javax.swing.JTextField();
-        chkDisponible = new javax.swing.JCheckBox();
-        lblObservaciones = new javax.swing.JLabel();
-        txtObservaciones = new javax.swing.JTextField();
+        lblDireccion = new javax.swing.JLabel();
+        txtDireccion = new javax.swing.JTextField();
+        lblContacto = new javax.swing.JLabel();
+        txtContacto = new javax.swing.JTextField();
         lblObligatorio = new javax.swing.JLabel();
         btnGuardar = new javax.swing.JButton();
         btnCancelar = new javax.swing.JButton();
@@ -437,44 +391,44 @@ public class frmPersonalMontaje extends JInternalFrame {
 
         lblTotalRegistardos.setText("Total Registros: 0");
 
-        cbxFiltrado.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Activo", "Desactivo", "Todos" }));
+        cbxFiltrado.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Activos", "Inactivos", "Todos" }));
 
-        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
-        jPanel1.setLayout(jPanel1Layout);
-        jPanel1Layout.setHorizontalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
-                .addGap(20, 20, 20)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(scrollTabla, javax.swing.GroupLayout.PREFERRED_SIZE, 1003, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addGroup(jPanel1Layout.createSequentialGroup()
+        javax.swing.GroupLayout ListadoLayout = new javax.swing.GroupLayout(Listado);
+        Listado.setLayout(ListadoLayout);
+        ListadoLayout.setHorizontalGroup(
+            ListadoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(ListadoLayout.createSequentialGroup()
+                .addGap(27, 27, 27)
+                .addGroup(ListadoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(ListadoLayout.createSequentialGroup()
+                        .addGroup(ListadoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(scrollTabla, javax.swing.GroupLayout.PREFERRED_SIZE, 998, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGroup(ListadoLayout.createSequentialGroup()
                                 .addComponent(lblBuscar)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(txtBuscar, javax.swing.GroupLayout.PREFERRED_SIZE, 181, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(txtBuscar, javax.swing.GroupLayout.PREFERRED_SIZE, 520, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(18, 18, 18)
                                 .addComponent(btnBuscar)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                 .addComponent(btnNuevo)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                 .addComponent(btnEditar)
-                                .addGap(205, 205, 205)
-                                .addComponent(cbxFiltrado, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addContainerGap(29, Short.MAX_VALUE))
-                    .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(cbxFiltrado, javax.swing.GroupLayout.PREFERRED_SIZE, 142, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addContainerGap(27, Short.MAX_VALUE))
+                    .addGroup(ListadoLayout.createSequentialGroup()
                         .addComponent(btnActivar)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(btnDesactivar)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(lblTotalRegistardos)
-                        .addGap(173, 173, 173))))
+                        .addGap(116, 116, 116))))
         );
-        jPanel1Layout.setVerticalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
-                .addGap(20, 20, 20)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+        ListadoLayout.setVerticalGroup(
+            ListadoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(ListadoLayout.createSequentialGroup()
+                .addGap(33, 33, 33)
+                .addGroup(ListadoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(lblBuscar)
                     .addComponent(txtBuscar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnBuscar)
@@ -482,24 +436,24 @@ public class frmPersonalMontaje extends JInternalFrame {
                     .addComponent(btnEditar)
                     .addComponent(cbxFiltrado, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(scrollTabla, javax.swing.GroupLayout.PREFERRED_SIZE, 464, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                .addComponent(scrollTabla, javax.swing.GroupLayout.PREFERRED_SIZE, 403, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(ListadoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnActivar)
                     .addComponent(btnDesactivar)
                     .addComponent(lblTotalRegistardos))
-                .addContainerGap(41, Short.MAX_VALUE))
+                .addContainerGap(88, Short.MAX_VALUE))
         );
 
-        jTabbedPane1.addTab("Listado", jPanel1);
+        jTabbedPane1.addTab("Listado", Listado);
 
         lblId.setText("ID:");
 
-        lblNombre.setText("Nombre (*):");
+        lblNombre.setText("Nombre:");
 
         lblTipoDocumento.setText("Tipo Documento:");
 
-        cbxTipoDocumento.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "CC", "CE", "PASAPORTE" }));
+        cbxTipoDocumento.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "CC", "CE", "NIT", "PASAPORTE" }));
 
         lblNumDocumento.setText("N° Documento:");
 
@@ -507,17 +461,11 @@ public class frmPersonalMontaje extends JInternalFrame {
 
         lblEmail.setText("Email:");
 
-        lblEspecialidad.setText("Especialidad (*):");
+        lblDireccion.setText("Dirección:");
 
-        cbxEspecialidad.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Montaje", "Decoracion", "Sonido", "Iluminacion", "Logística" }));
+        lblContacto.setText("Persona Contacto:");
 
-        lblCostoHora.setText("Costo por Hora:");
-
-        chkDisponible.setText("Disponiblre");
-
-        lblObservaciones.setText("Observaciones:");
-
-        lblObligatorio.setText("(*) Campo Obligatorio ");
+        lblObligatorio.setText("(*) Campo Obligatorio");
 
         btnGuardar.setText("Guardar");
 
@@ -528,60 +476,52 @@ public class frmPersonalMontaje extends JInternalFrame {
         MantenimientoLayout.setHorizontalGroup(
             MantenimientoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(MantenimientoLayout.createSequentialGroup()
+                .addContainerGap()
                 .addGroup(MantenimientoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(MantenimientoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                        .addGroup(MantenimientoLayout.createSequentialGroup()
+                            .addComponent(lblId)
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                            .addComponent(txtId, javax.swing.GroupLayout.PREFERRED_SIZE, 163, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGroup(MantenimientoLayout.createSequentialGroup()
+                            .addComponent(lblNombre)
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                            .addComponent(txtNombre, javax.swing.GroupLayout.PREFERRED_SIZE, 182, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGroup(MantenimientoLayout.createSequentialGroup()
+                            .addComponent(lblTipoDocumento)
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                            .addComponent(cbxTipoDocumento, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addGroup(MantenimientoLayout.createSequentialGroup()
+                            .addComponent(lblNumDocumento)
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                            .addComponent(txtNumDocumento))
+                        .addGroup(MantenimientoLayout.createSequentialGroup()
+                            .addComponent(lblTelefono)
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                            .addComponent(txtTelefono))
+                        .addGroup(MantenimientoLayout.createSequentialGroup()
+                            .addComponent(lblEmail)
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                            .addComponent(txtEmail))
+                        .addGroup(MantenimientoLayout.createSequentialGroup()
+                            .addComponent(lblDireccion)
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                            .addComponent(txtDireccion))
+                        .addGroup(MantenimientoLayout.createSequentialGroup()
+                            .addComponent(lblContacto)
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                            .addComponent(txtContacto)))
+                    .addComponent(lblObligatorio)
                     .addGroup(MantenimientoLayout.createSequentialGroup()
-                        .addGap(14, 14, 14)
-                        .addGroup(MantenimientoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addGroup(MantenimientoLayout.createSequentialGroup()
-                                .addComponent(lblObservaciones)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(txtObservaciones))
-                            .addComponent(chkDisponible)
-                            .addGroup(MantenimientoLayout.createSequentialGroup()
-                                .addComponent(lblCostoHora)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(txtCostoHora, javax.swing.GroupLayout.PREFERRED_SIZE, 141, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(MantenimientoLayout.createSequentialGroup()
-                                .addComponent(lblTelefono)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(txtTelefono, javax.swing.GroupLayout.PREFERRED_SIZE, 158, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(MantenimientoLayout.createSequentialGroup()
-                                .addComponent(lblNombre)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(txtNombre, javax.swing.GroupLayout.PREFERRED_SIZE, 223, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(MantenimientoLayout.createSequentialGroup()
-                                .addComponent(lblId)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(txtId, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, MantenimientoLayout.createSequentialGroup()
-                                .addComponent(lblNumDocumento)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(txtNumDocumento))
-                            .addGroup(MantenimientoLayout.createSequentialGroup()
-                                .addComponent(lblTipoDocumento)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(cbxTipoDocumento, javax.swing.GroupLayout.PREFERRED_SIZE, 183, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, MantenimientoLayout.createSequentialGroup()
-                                .addComponent(lblEspecialidad)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(cbxEspecialidad, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, MantenimientoLayout.createSequentialGroup()
-                                .addComponent(lblEmail)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(txtEmail, javax.swing.GroupLayout.PREFERRED_SIZE, 210, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(lblObligatorio))
-                    .addGroup(MantenimientoLayout.createSequentialGroup()
-                        .addContainerGap()
                         .addComponent(btnGuardar)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(btnCancelar)))
-                .addContainerGap(613, Short.MAX_VALUE))
+                .addContainerGap(811, Short.MAX_VALUE))
         );
         MantenimientoLayout.setVerticalGroup(
             MantenimientoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(MantenimientoLayout.createSequentialGroup()
-                .addGap(14, 14, 14)
+                .addGap(19, 19, 19)
                 .addGroup(MantenimientoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(lblId)
                     .addComponent(txtId, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -589,7 +529,7 @@ public class frmPersonalMontaje extends JInternalFrame {
                 .addGroup(MantenimientoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(lblNombre)
                     .addComponent(txtNombre, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGap(18, 18, 18)
                 .addGroup(MantenimientoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(lblTipoDocumento)
                     .addComponent(cbxTipoDocumento, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -605,26 +545,21 @@ public class frmPersonalMontaje extends JInternalFrame {
                 .addGroup(MantenimientoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(lblEmail)
                     .addComponent(txtEmail, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(MantenimientoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(lblDireccion)
+                    .addComponent(txtDireccion, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(MantenimientoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(lblEspecialidad)
-                    .addComponent(cbxEspecialidad, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(18, 18, 18)
-                .addGroup(MantenimientoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(txtCostoHora, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(lblCostoHora))
+                    .addComponent(lblContacto)
+                    .addComponent(txtContacto, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(chkDisponible)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(MantenimientoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(lblObservaciones)
-                    .addComponent(txtObservaciones, javax.swing.GroupLayout.PREFERRED_SIZE, 82, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(lblObligatorio))
-                .addGap(57, 57, 57)
+                .addComponent(lblObligatorio)
+                .addGap(33, 33, 33)
                 .addGroup(MantenimientoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnGuardar)
                     .addComponent(btnCancelar))
-                .addContainerGap(103, Short.MAX_VALUE))
+                .addContainerGap(231, Short.MAX_VALUE))
         );
 
         jTabbedPane1.addTab("Mantenimiento", Mantenimiento);
@@ -637,10 +572,7 @@ public class frmPersonalMontaje extends JInternalFrame {
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jTabbedPane1)
-                .addContainerGap())
+            .addComponent(jTabbedPane1)
         );
 
         pack();
@@ -648,6 +580,7 @@ public class frmPersonalMontaje extends JInternalFrame {
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JPanel Listado;
     private javax.swing.JPanel Mantenimiento;
     private javax.swing.JButton btnActivar;
     private javax.swing.JButton btnBuscar;
@@ -656,33 +589,29 @@ public class frmPersonalMontaje extends JInternalFrame {
     private javax.swing.JButton btnEditar;
     private javax.swing.JButton btnGuardar;
     private javax.swing.JButton btnNuevo;
-    private javax.swing.JComboBox<String> cbxEspecialidad;
     private javax.swing.JComboBox<String> cbxFiltrado;
     private javax.swing.JComboBox<String> cbxTipoDocumento;
-    private javax.swing.JCheckBox chkDisponible;
-    private javax.swing.JPanel jPanel1;
     private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JLabel lblBuscar;
-    private javax.swing.JLabel lblCostoHora;
+    private javax.swing.JLabel lblContacto;
+    private javax.swing.JLabel lblDireccion;
     private javax.swing.JLabel lblEmail;
-    private javax.swing.JLabel lblEspecialidad;
     private javax.swing.JLabel lblId;
     private javax.swing.JLabel lblNombre;
     private javax.swing.JLabel lblNumDocumento;
     private javax.swing.JLabel lblObligatorio;
-    private javax.swing.JLabel lblObservaciones;
     private javax.swing.JLabel lblTelefono;
     private javax.swing.JLabel lblTipoDocumento;
     private javax.swing.JLabel lblTotalRegistardos;
     private javax.swing.JScrollPane scrollTabla;
     private javax.swing.JTable tablaListado;
     private javax.swing.JTextField txtBuscar;
-    private javax.swing.JTextField txtCostoHora;
+    private javax.swing.JTextField txtContacto;
+    private javax.swing.JTextField txtDireccion;
     private javax.swing.JTextField txtEmail;
     private javax.swing.JTextField txtId;
     private javax.swing.JTextField txtNombre;
     private javax.swing.JTextField txtNumDocumento;
-    private javax.swing.JTextField txtObservaciones;
     private javax.swing.JTextField txtTelefono;
     // End of variables declaration//GEN-END:variables
 }

@@ -1,51 +1,15 @@
-
 package presentacion;
+
 import datos.TipoServicioDAO;
 import entidades.TipoServicio;
 import java.util.List;
 import javax.swing.JInternalFrame;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
-public class frmTipoServicio extends javax.swing.JInternalFrame {
-
-  
-    public frmTipoServicio() {
-        initComponents();
-    }
-
-
-
 
 public class FrmTipoServicio extends JInternalFrame {
     
-    // ========== COMPONENTES ==========
-    // Pestañas
-    private javax.swing.JTabbedPane tabGeneral;
-    
-    // Pestaña Listado
-    private javax.swing.JLabel lblBuscar;
-    private javax.swing.JTextField txtBuscar;
-    private javax.swing.JButton btnBuscar;
-    private javax.swing.JButton btnNuevo;
-    private javax.swing.JButton btnEditar;
-    private javax.swing.JButton btnActivar;
-    private javax.swing.JButton btnDesactivar;
-    private javax.swing.JScrollPane scrollTabla;
-    private javax.swing.JTable tablaListado;
-    private javax.swing.JLabel lblTotalRegistros;
-    
-    // Pestaña Mantenimiento
-    private javax.swing.JLabel lblId;
-    private javax.swing.JTextField txtId;
-    private javax.swing.JLabel lblNombre;
-    private javax.swing.JTextField txtNombre;
-    private javax.swing.JLabel lblDescripcion;
-    private javax.swing.JTextField txtDescripcion;
-    private javax.swing.JButton btnGuardar;
-    private javax.swing.JButton btnCancelar;
-    private javax.swing.JLabel lblObligatorio;
-    
-    // ========== VARIABLES DE CONTROL ==========
+    // Variables de control
     private TipoServicioDAO dao;
     private DefaultTableModel modeloTabla;
     private String accion;
@@ -53,7 +17,8 @@ public class FrmTipoServicio extends JInternalFrame {
     private String nombreActual;
     
     public FrmTipoServicio() {
-        initComponentes();
+        initComponents();
+        configurarEventos();
         iniciar();
         setVisible(true);
     }
@@ -72,22 +37,62 @@ public class FrmTipoServicio extends JInternalFrame {
         modeloTabla.setColumnIdentifiers(new String[]{"ID", "NOMBRE", "DESCRIPCIÓN", "ESTADO"});
         tablaListado.setModel(modeloTabla);
         
+        // Primero quitar el ActionListener temporalmente para evitar el error
+        java.awt.event.ActionListener[] listeners = cbxFiltrado.getActionListeners();
+        for (java.awt.event.ActionListener al : listeners) {
+            cbxFiltrado.removeActionListener(al);
+        }
+        
+        // Configurar combo filtro
+        cbxFiltrado.removeAllItems();
+        cbxFiltrado.addItem("Activos");
+        cbxFiltrado.addItem("Inactivos");
+        cbxFiltrado.addItem("Todos");
+        cbxFiltrado.setSelectedIndex(0);  // Seleccionar "Activos" por defecto
+        
+        // Reagregar el listener después de configurar
+        cbxFiltrado.addActionListener(e -> listar(txtBuscar.getText()));
+        
         listar("");
-        tabGeneral.setEnabledAt(1, false);
+        jTabbedPane1.setEnabledAt(1, false);
         
         setTitle("Tipos de Servicio");
         setClosable(true);
         setIconifiable(true);
         setMaximizable(true);
         setResizable(true);
-        setSize(800, 550);
+        setSize(850, 550);
     }
     
-    // ========== MÉTODOS PRINCIPALES ==========
+    private void configurarEventos() {
+        btnBuscar.addActionListener(e -> listar(txtBuscar.getText()));
+        btnNuevo.addActionListener(e -> nuevo());
+        btnEditar.addActionListener(e -> editar());
+        btnGuardar.addActionListener(e -> guardar());
+        btnCancelar.addActionListener(e -> cancelar());
+        btnActivar.addActionListener(e -> activar());
+        btnDesactivar.addActionListener(e -> desactivar());
+        
+        tablaListado.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                int fila = tablaListado.getSelectedRow();
+                if (fila >= 0) {
+                    idActual = Integer.parseInt(tablaListado.getValueAt(fila, 0).toString());
+                    nombreActual = tablaListado.getValueAt(fila, 1).toString();
+                }
+            }
+        });
+    }
     
     private void listar(String texto) {
+        // Verificar que el combo tenga un elemento seleccionado
+        if (cbxFiltrado.getSelectedItem() == null) {
+            return;
+        }
+        
         modeloTabla.setRowCount(0);
-        List<TipoServicio> lista = dao.listar(texto);
+        String filtroEstado = cbxFiltrado.getSelectedItem().toString();
+        List<TipoServicio> lista = dao.listarConFiltro(texto, filtroEstado);
         
         for (TipoServicio ts : lista) {
             String estado = ts.isActivo() ? "Activo" : "Inactivo";
@@ -99,23 +104,22 @@ public class FrmTipoServicio extends JInternalFrame {
             });
         }
         
-        int total = dao.total();
-        lblTotalRegistros.setText("Total registros: " + total);
+        lblTotalRegistardos.setText("Total registros: " + lista.size());
     }
     
     private void nuevo() {
         accion = "guardar";
         limpiar();
-        tabGeneral.setEnabledAt(0, false);
-        tabGeneral.setEnabledAt(1, true);
-        tabGeneral.setSelectedIndex(1);
+        jTabbedPane1.setEnabledAt(0, false);
+        jTabbedPane1.setEnabledAt(1, true);
+        jTabbedPane1.setSelectedIndex(1);
         txtNombre.requestFocus();
     }
     
     private void editar() {
         int fila = tablaListado.getSelectedRow();
         if (fila == -1) {
-            JOptionPane.showMessageDialog(this, "Seleccione un registro para editar", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Seleccione un registro", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
         
@@ -126,9 +130,9 @@ public class FrmTipoServicio extends JInternalFrame {
         txtDescripcion.setText(tablaListado.getValueAt(fila, 2).toString());
         nombreActual = tablaListado.getValueAt(fila, 1).toString();
         
-        tabGeneral.setEnabledAt(0, false);
-        tabGeneral.setEnabledAt(1, true);
-        tabGeneral.setSelectedIndex(1);
+        jTabbedPane1.setEnabledAt(0, false);
+        jTabbedPane1.setEnabledAt(1, true);
+        jTabbedPane1.setSelectedIndex(1);
         txtNombre.requestFocus();
     }
     
@@ -136,7 +140,6 @@ public class FrmTipoServicio extends JInternalFrame {
         String nombre = txtNombre.getText().trim();
         String descripcion = txtDescripcion.getText().trim();
         
-        // Validaciones
         if (nombre.isEmpty()) {
             JOptionPane.showMessageDialog(this, "El nombre es obligatorio", "Error", JOptionPane.ERROR_MESSAGE);
             txtNombre.requestFocus();
@@ -149,16 +152,9 @@ public class FrmTipoServicio extends JInternalFrame {
             return;
         }
         
-        if (descripcion.length() > 250) {
-            JOptionPane.showMessageDialog(this, "La descripción no puede tener más de 250 caracteres", "Error", JOptionPane.ERROR_MESSAGE);
-            txtDescripcion.requestFocus();
-            return;
-        }
-        
         if (accion.equals("guardar")) {
-            // Validar que no exista
             if (dao.existe(nombre)) {
-                JOptionPane.showMessageDialog(this, "El tipo de servicio ya existe", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Ya existe un tipo de servicio con ese nombre", "Error", JOptionPane.ERROR_MESSAGE);
                 txtNombre.requestFocus();
                 return;
             }
@@ -173,12 +169,11 @@ public class FrmTipoServicio extends JInternalFrame {
                 listar("");
                 cancelar();
             } else {
-                JOptionPane.showMessageDialog(this, "Error al guardar el registro", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Error al guardar", "Error", JOptionPane.ERROR_MESSAGE);
             }
         } else {
-            // Editar
             if (!nombre.equals(nombreActual) && dao.existe(nombre)) {
-                JOptionPane.showMessageDialog(this, "El tipo de servicio ya existe", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Ya existe un tipo de servicio con ese nombre", "Error", JOptionPane.ERROR_MESSAGE);
                 txtNombre.requestFocus();
                 return;
             }
@@ -194,7 +189,7 @@ public class FrmTipoServicio extends JInternalFrame {
                 listar("");
                 cancelar();
             } else {
-                JOptionPane.showMessageDialog(this, "Error al actualizar el registro", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Error al actualizar", "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -209,17 +204,13 @@ public class FrmTipoServicio extends JInternalFrame {
         idActual = Integer.parseInt(tablaListado.getValueAt(fila, 0).toString());
         String nombre = tablaListado.getValueAt(fila, 1).toString();
         
-        int confirm = JOptionPane.showConfirmDialog(this, 
-            "¿Desea activar el registro: " + nombre + "?", 
-            "Confirmar", 
-            JOptionPane.YES_NO_OPTION);
-        
+        int confirm = JOptionPane.showConfirmDialog(this, "¿Activar: " + nombre + "?", "Confirmar", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
             if (dao.activar(idActual)) {
-                JOptionPane.showMessageDialog(this, "Registro activado correctamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Registro activado", "Éxito", JOptionPane.INFORMATION_MESSAGE);
                 listar("");
             } else {
-                JOptionPane.showMessageDialog(this, "Error al activar el registro", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Error al activar", "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -234,30 +225,22 @@ public class FrmTipoServicio extends JInternalFrame {
         idActual = Integer.parseInt(tablaListado.getValueAt(fila, 0).toString());
         String nombre = tablaListado.getValueAt(fila, 1).toString();
         
-        int confirm = JOptionPane.showConfirmDialog(this, 
-            "¿Desea desactivar el registro: " + nombre + "?", 
-            "Confirmar", 
-            JOptionPane.YES_NO_OPTION);
-        
+        int confirm = JOptionPane.showConfirmDialog(this, "¿Desactivar: " + nombre + "?", "Confirmar", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
             if (dao.desactivar(idActual)) {
-                JOptionPane.showMessageDialog(this, "Registro desactivado correctamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Registro desactivado", "Éxito", JOptionPane.INFORMATION_MESSAGE);
                 listar("");
             } else {
-                JOptionPane.showMessageDialog(this, "Error al desactivar el registro", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Error al desactivar", "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
     
-    private void buscar() {
-        listar(txtBuscar.getText());
-    }
-    
     private void cancelar() {
         limpiar();
-        tabGeneral.setEnabledAt(0, true);
-        tabGeneral.setEnabledAt(1, false);
-        tabGeneral.setSelectedIndex(0);
+        jTabbedPane1.setEnabledAt(0, true);
+        jTabbedPane1.setEnabledAt(1, false);
+        jTabbedPane1.setSelectedIndex(0);
         accion = "guardar";
     }
     
@@ -269,252 +252,9 @@ public class FrmTipoServicio extends JInternalFrame {
         nombreActual = "";
     }
     
-    // ========== NetBeans GENERA ESTO ==========
-    // (No modificar este código - usar diseñador visual)
-    
-    private void initComponents() {
-        // Pestañas
-        tabGeneral = new javax.swing.JTabbedPane();
         
-        // Panel Listado
-        javax.swing.JPanel panelListado = new javax.swing.JPanel();
-        panelListado.setLayout(null);
-        
-        lblBuscar = new javax.swing.JLabel();
-        lblBuscar.setText("Buscar:");
-        lblBuscar.setBounds(20, 20, 60, 25);
-        panelListado.add(lblBuscar);
-        
-        txtBuscar = new javax.swing.JTextField();
-        txtBuscar.setBounds(80, 20, 250, 25);
-        panelListado.add(txtBuscar);
-        
-        btnBuscar = new javax.swing.JButton();
-        btnBuscar.setText("Buscar");
-        btnBuscar.setBounds(340, 20, 100, 25);
-        btnBuscar.addActionListener(e -> buscar());
-        panelListado.add(btnBuscar);
-        
-        btnNuevo = new javax.swing.JButton();
-        btnNuevo.setText("Nuevo");
-        btnNuevo.setBounds(450, 20, 100, 25);
-        btnNuevo.addActionListener(e -> nuevo());
-        panelListado.add(btnNuevo);
-        
-        btnEditar = new javax.swing.JButton();
-        btnEditar.setText("Editar");
-        btnEditar.setBounds(560, 20, 100, 25);
-        btnEditar.addActionListener(e -> editar());
-        panelListado.add(btnEditar);
-        
-        scrollTabla = new javax.swing.JScrollPane();
-        scrollTabla.setBounds(20, 60, 740, 350);
-        tablaListado = new javax.swing.JTable();
-        scrollTabla.setViewportView(tablaListado);
-        panelListado.add(scrollTabla);
-        
-        btnActivar = new javax.swing.JButton();
-        btnActivar.setText("Activar");
-        btnActivar.setBounds(20, 430, 100, 30);
-        btnActivar.addActionListener(e -> activar());
-        panelListado.add(btnActivar);
-        
-        btnDesactivar = new javax.swing.JButton();
-        btnDesactivar.setText("Desactivar");
-        btnDesactivar.setBounds(130, 430, 100, 30);
-        btnDesactivar.addActionListener(e -> desactivar());
-        panelListado.add(btnDesactivar);
-        
-        lblTotalRegistros = new javax.swing.JLabel();
-        lblTotalRegistros.setText("Total registros: 0");
-        lblTotalRegistros.setBounds(600, 435, 200, 25);
-        panelListado.add(lblTotalRegistros);
-        
-        // Panel Mantenimiento
-        javax.swing.JPanel panelMantenimiento = new javax.swing.JPanel();
-        panelMantenimiento.setLayout(null);
-        
-        lblId = new javax.swing.JLabel();
-        lblId.setText("ID:");
-        lblId.setBounds(50, 30, 60, 25);
-        panelMantenimiento.add(lblId);
-        
-        txtId = new javax.swing.JTextField();
-        txtId.setBounds(120, 30, 80, 25);
-        txtId.setEditable(false);
-        txtId.setVisible(false);
-        panelMantenimiento.add(txtId);
-        
-        lblNombre = new javax.swing.JLabel();
-        lblNombre.setText("Nombre (*):");
-        lblNombre.setBounds(50, 80, 100, 25);
-        panelMantenimiento.add(lblNombre);
-        
-        txtNombre = new javax.swing.JTextField();
-        txtNombre.setBounds(150, 80, 300, 25);
-        panelMantenimiento.add(txtNombre);
-        
-        lblDescripcion = new javax.swing.JLabel();
-        lblDescripcion.setText("Descripción:");
-        lblDescripcion.setBounds(50, 130, 100, 25);
-        panelMantenimiento.add(lblDescripcion);
-        
-        txtDescripcion = new javax.swing.JTextField();
-        txtDescripcion.setBounds(150, 130, 500, 80);
-        panelMantenimiento.add(txtDescripcion);
-        
-        lblObligatorio = new javax.swing.JLabel();
-        lblObligatorio.setText("(*) Campo obligatorio");
-        lblObligatorio.setFont(new java.awt.Font("Arial", java.awt.Font.ITALIC, 11));
-        lblObligatorio.setBounds(150, 220, 200, 20);
-        panelMantenimiento.add(lblObligatorio);
-        
-        btnGuardar = new javax.swing.JButton();
-        btnGuardar.setText("Guardar");
-        btnGuardar.setBounds(150, 260, 100, 35);
-        btnGuardar.addActionListener(e -> guardar());
-        panelMantenimiento.add(btnGuardar);
-        
-        btnCancelar = new javax.swing.JButton();
-        btnCancelar.setText("Cancelar");
-        btnCancelar.setBounds(270, 260, 100, 35);
-        btnCancelar.addActionListener(e -> cancelar());
-        panelMantenimiento.add(btnCancelar);
-        
-        // Agregar pestañas
-        tabGeneral.addTab("Listado", panelListado);
-        tabGeneral.addTab("Mantenimiento", panelMantenimiento);
-        
-        // Layout principal
-        setLayout(new java.awt.BorderLayout());
-        add(tabGeneral, java.awt.BorderLayout.CENTER);
-        
-        pack();
-    }
-    
-    // Variables declaration (NetBeans)
-    // End of variables declaration
 
-        private void initComponentes() {
-    // Pestañas
-    tabGeneral = new javax.swing.JTabbedPane();
-    
-    // Panel Listado
-    javax.swing.JPanel panelListado = new javax.swing.JPanel();
-    panelListado.setLayout(null);
-    
-    lblBuscar = new javax.swing.JLabel();
-    lblBuscar.setText("Buscar:");
-    lblBuscar.setBounds(20, 20, 60, 25);
-    panelListado.add(lblBuscar);
-    
-    txtBuscar = new javax.swing.JTextField();
-    txtBuscar.setBounds(80, 20, 250, 25);
-    panelListado.add(txtBuscar);
-    
-    btnBuscar = new javax.swing.JButton();
-    btnBuscar.setText("Buscar");
-    btnBuscar.setBounds(340, 20, 100, 25);
-    btnBuscar.addActionListener(e -> buscar());
-    panelListado.add(btnBuscar);
-    
-    btnNuevo = new javax.swing.JButton();
-    btnNuevo.setText("Nuevo");
-    btnNuevo.setBounds(450, 20, 100, 25);
-    btnNuevo.addActionListener(e -> nuevo());
-    panelListado.add(btnNuevo);
-    
-    btnEditar = new javax.swing.JButton();
-    btnEditar.setText("Editar");
-    btnEditar.setBounds(560, 20, 100, 25);
-    btnEditar.addActionListener(e -> editar());
-    panelListado.add(btnEditar);
-    
-    scrollTabla = new javax.swing.JScrollPane();
-    scrollTabla.setBounds(20, 60, 740, 350);
-    tablaListado = new javax.swing.JTable();
-    scrollTabla.setViewportView(tablaListado);
-    panelListado.add(scrollTabla);
-    
-    btnActivar = new javax.swing.JButton();
-    btnActivar.setText("Activar");
-    btnActivar.setBounds(20, 430, 100, 30);
-    btnActivar.addActionListener(e -> activar());
-    panelListado.add(btnActivar);
-    
-    btnDesactivar = new javax.swing.JButton();
-    btnDesactivar.setText("Desactivar");
-    btnDesactivar.setBounds(130, 430, 100, 30);
-    btnDesactivar.addActionListener(e -> desactivar());
-    panelListado.add(btnDesactivar);
-    
-    lblTotalRegistros = new javax.swing.JLabel();
-    lblTotalRegistros.setText("Total registros: 0");
-    lblTotalRegistros.setBounds(600, 435, 200, 25);
-    panelListado.add(lblTotalRegistros);
-    
-    // Panel Mantenimiento
-    javax.swing.JPanel panelMantenimiento = new javax.swing.JPanel();
-    panelMantenimiento.setLayout(null);
-    
-    lblId = new javax.swing.JLabel();
-    lblId.setText("ID:");
-    lblId.setBounds(50, 30, 60, 25);
-    panelMantenimiento.add(lblId);
-    
-    txtId = new javax.swing.JTextField();
-    txtId.setBounds(120, 30, 80, 25);
-    txtId.setEditable(false);
-    txtId.setVisible(false);
-    panelMantenimiento.add(txtId);
-    
-    lblNombre = new javax.swing.JLabel();
-    lblNombre.setText("Nombre (*):");
-    lblNombre.setBounds(50, 80, 100, 25);
-    panelMantenimiento.add(lblNombre);
-    
-    txtNombre = new javax.swing.JTextField();
-    txtNombre.setBounds(150, 80, 300, 25);
-    panelMantenimiento.add(txtNombre);
-    
-    lblDescripcion = new javax.swing.JLabel();
-    lblDescripcion.setText("Descripción:");
-    lblDescripcion.setBounds(50, 130, 100, 25);
-    panelMantenimiento.add(lblDescripcion);
-    
-    txtDescripcion = new javax.swing.JTextField();
-    txtDescripcion.setBounds(150, 130, 500, 80);
-    panelMantenimiento.add(txtDescripcion);
-    
-    lblObligatorio = new javax.swing.JLabel();
-    lblObligatorio.setText("(*) Campo obligatorio");
-    lblObligatorio.setFont(new java.awt.Font("Arial", java.awt.Font.ITALIC, 11));
-    lblObligatorio.setBounds(150, 220, 200, 20);
-    panelMantenimiento.add(lblObligatorio);
-    
-    btnGuardar = new javax.swing.JButton();
-    btnGuardar.setText("Guardar");
-    btnGuardar.setBounds(150, 260, 100, 35);
-    btnGuardar.addActionListener(e -> guardar());
-    panelMantenimiento.add(btnGuardar);
-    
-    btnCancelar = new javax.swing.JButton();
-    btnCancelar.setText("Cancelar");
-    btnCancelar.setBounds(270, 260, 100, 35);
-    btnCancelar.addActionListener(e -> cancelar());
-    panelMantenimiento.add(btnCancelar);
-    
-    // Agregar pestañas
-    tabGeneral.addTab("Listado", panelListado);
-    tabGeneral.addTab("Mantenimiento", panelMantenimiento);
-    
-    // Layout principal
-    setLayout(new java.awt.BorderLayout());
-    add(tabGeneral, java.awt.BorderLayout.CENTER);
-    
-    pack();
-}
-    }
+
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
@@ -530,6 +270,7 @@ public class FrmTipoServicio extends JInternalFrame {
         btnActivar = new javax.swing.JButton();
         btnDesactivar = new javax.swing.JButton();
         lblTotalRegistardos = new javax.swing.JLabel();
+        cbxFiltrado = new javax.swing.JComboBox<>();
         jPanel2 = new javax.swing.JPanel();
         lblId = new javax.swing.JLabel();
         txtId = new javax.swing.JTextField();
@@ -565,6 +306,8 @@ public class FrmTipoServicio extends JInternalFrame {
 
         lblTotalRegistardos.setText("Total Regustardos: 0");
 
+        cbxFiltrado.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Activos", "Inactivos", "Todos" }));
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
@@ -573,18 +316,7 @@ public class FrmTipoServicio extends JInternalFrame {
                 .addGap(15, 15, 15)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(scrollTabla, javax.swing.GroupLayout.PREFERRED_SIZE, 1002, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addComponent(lblBuscar)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(txtBuscar, javax.swing.GroupLayout.PREFERRED_SIZE, 231, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(18, 18, 18)
-                                .addComponent(btnBuscar)
-                                .addGap(18, 18, 18)
-                                .addComponent(btnNuevo)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(btnEditar)))
+                        .addComponent(scrollTabla, javax.swing.GroupLayout.PREFERRED_SIZE, 1002, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addContainerGap(21, Short.MAX_VALUE))
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addComponent(btnActivar)
@@ -592,7 +324,20 @@ public class FrmTipoServicio extends JInternalFrame {
                         .addComponent(btnDesactivar)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(lblTotalRegistardos)
-                        .addGap(193, 193, 193))))
+                        .addGap(193, 193, 193))
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addComponent(lblBuscar)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(txtBuscar, javax.swing.GroupLayout.PREFERRED_SIZE, 231, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(18, 18, 18)
+                        .addComponent(btnBuscar)
+                        .addGap(18, 18, 18)
+                        .addComponent(btnNuevo)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(btnEditar)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(cbxFiltrado, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(117, 117, 117))))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -603,7 +348,8 @@ public class FrmTipoServicio extends JInternalFrame {
                     .addComponent(txtBuscar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnBuscar)
                     .addComponent(btnNuevo)
-                    .addComponent(btnEditar))
+                    .addComponent(btnEditar)
+                    .addComponent(cbxFiltrado, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addComponent(scrollTabla, javax.swing.GroupLayout.PREFERRED_SIZE, 391, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(28, 28, 28)
@@ -663,13 +409,14 @@ public class FrmTipoServicio extends JInternalFrame {
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel2Layout.createSequentialGroup()
                 .addGap(20, 20, 20)
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(lblId)
-                    .addComponent(txtId, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(lblNombre)
-                    .addComponent(txtNombre, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(txtDescripcion, javax.swing.GroupLayout.PREFERRED_SIZE, 166, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(lblDescripcion))
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(lblDescripcion)
+                    .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(lblId)
+                        .addComponent(txtId, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(lblNombre)
+                        .addComponent(txtNombre, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(txtDescripcion, javax.swing.GroupLayout.PREFERRED_SIZE, 166, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(lblObligatorio)
                 .addGap(76, 76, 76)
@@ -704,6 +451,7 @@ public class FrmTipoServicio extends JInternalFrame {
     private javax.swing.JButton btnEditar;
     private javax.swing.JButton btnGuardar;
     private javax.swing.JButton btnNuevo;
+    private javax.swing.JComboBox<String> cbxFiltrado;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JTabbedPane jTabbedPane1;

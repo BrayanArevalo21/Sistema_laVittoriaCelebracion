@@ -197,7 +197,7 @@ public class frmReporteEventos extends javax.swing.JInternalFrame {
         }
     }
     
-    // ========== NetBeans GENERA ESTO ==========
+  
     
     private void initComponentes() {
         javax.swing.JPanel panelPrincipal = new javax.swing.JPanel();
@@ -290,8 +290,7 @@ public class frmReporteEventos extends javax.swing.JInternalFrame {
         pack();
     }
     
-    // Variables declaration (NetBeans)
-    // End of variables declaration
+  
 
  
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents

@@ -24,7 +24,7 @@ public class EventoDAO implements CrudSimpleInterface<Evento> {
         List<Evento> registros = new ArrayList();
         try {
             ps = CON.conectar().prepareStatement(
-                "SELECT e.*, p.nombre as nombre_cliente FROM evento e " +
+                "SELECT e.*, p.nombre as cliente_nombre FROM evento e " +
                 "INNER JOIN persona p ON e.cliente_id = p.id " +
                 "WHERE e.nombre_evento LIKE ? AND e.activo = 1"
             );
@@ -34,7 +34,7 @@ public class EventoDAO implements CrudSimpleInterface<Evento> {
                 Evento e = new Evento();
                 e.setId(rs.getInt("id"));
                 e.setClienteId(rs.getInt("cliente_id"));
-                e.setNombreCliente(rs.getString("nombre_cliente"));
+                e.setNombreCliente(rs.getString("cliente_nombre"));
                 e.setNombreEvento(rs.getString("nombre_evento"));
                 e.setFechaEvento(rs.getString("fecha_evento"));
                 e.setLugarEvento(rs.getString("lugar_evento"));
@@ -47,7 +47,81 @@ public class EventoDAO implements CrudSimpleInterface<Evento> {
             ps.close();
             rs.close();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, e.getMessage());
+            JOptionPane.showMessageDialog(null, "Error en listar: " + e.getMessage());
+        } finally {
+            ps = null;
+            rs = null;
+            CON.desconectar();
+        }
+        return registros;
+    }
+    
+    // ========== LISTAR INACTIVOS ==========
+    public List<Evento> listarInactivos(String texto) {
+        List<Evento> registros = new ArrayList();
+        try {
+            ps = CON.conectar().prepareStatement(
+                "SELECT e.*, p.nombre as cliente_nombre FROM evento e " +
+                "INNER JOIN persona p ON e.cliente_id = p.id " +
+                "WHERE e.nombre_evento LIKE ? AND e.activo = 0"
+            );
+            ps.setString(1, "%" + texto + "%");
+            rs = ps.executeQuery();
+            while (rs.next()) {
+                Evento e = new Evento();
+                e.setId(rs.getInt("id"));
+                e.setClienteId(rs.getInt("cliente_id"));
+                e.setNombreCliente(rs.getString("cliente_nombre"));
+                e.setNombreEvento(rs.getString("nombre_evento"));
+                e.setFechaEvento(rs.getString("fecha_evento"));
+                e.setLugarEvento(rs.getString("lugar_evento"));
+                e.setNumeroInvitados(rs.getInt("numero_invitados"));
+                e.setPresupuestoTotal(rs.getDouble("presupuesto_total"));
+                e.setEstado(rs.getString("estado"));
+                e.setActivo(rs.getBoolean("activo"));
+                registros.add(e);
+            }
+            ps.close();
+            rs.close();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Error en listarInactivos: " + e.getMessage());
+        } finally {
+            ps = null;
+            rs = null;
+            CON.desconectar();
+        }
+        return registros;
+    }
+    
+    // ========== LISTAR TODOS (activos e inactivos) ==========
+    public List<Evento> listarTodos(String texto) {
+        List<Evento> registros = new ArrayList();
+        try {
+            ps = CON.conectar().prepareStatement(
+                "SELECT e.*, p.nombre as cliente_nombre FROM evento e " +
+                "INNER JOIN persona p ON e.cliente_id = p.id " +
+                "WHERE e.nombre_evento LIKE ?"
+            );
+            ps.setString(1, "%" + texto + "%");
+            rs = ps.executeQuery();
+            while (rs.next()) {
+                Evento e = new Evento();
+                e.setId(rs.getInt("id"));
+                e.setClienteId(rs.getInt("cliente_id"));
+                e.setNombreCliente(rs.getString("cliente_nombre"));
+                e.setNombreEvento(rs.getString("nombre_evento"));
+                e.setFechaEvento(rs.getString("fecha_evento"));
+                e.setLugarEvento(rs.getString("lugar_evento"));
+                e.setNumeroInvitados(rs.getInt("numero_invitados"));
+                e.setPresupuestoTotal(rs.getDouble("presupuesto_total"));
+                e.setEstado(rs.getString("estado"));
+                e.setActivo(rs.getBoolean("activo"));
+                registros.add(e);
+            }
+            ps.close();
+            rs.close();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Error en listarTodos: " + e.getMessage());
         } finally {
             ps = null;
             rs = null;
@@ -61,9 +135,8 @@ public class EventoDAO implements CrudSimpleInterface<Evento> {
         resp = false;
         try {
             ps = CON.conectar().prepareStatement(
-                "INSERT INTO evento (cliente_id, nombre_evento, fecha_evento, lugar_evento, " +
-                "numero_invitados, presupuesto_total, estado, activo, fecha_registro) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, 1, NOW())"
+                "INSERT INTO evento (cliente_id, usuario_id, nombre_evento, fecha_evento, lugar_evento, numero_invitados, presupuesto_total, estado, activo) "
+                + "VALUES (?, NULL, ?, ?, ?, ?, ?, ?, 1)"  // ← usuario_id = NULL
             );
             ps.setInt(1, obj.getClienteId());
             ps.setString(2, obj.getNombreEvento());
@@ -72,10 +145,13 @@ public class EventoDAO implements CrudSimpleInterface<Evento> {
             ps.setInt(5, obj.getNumeroInvitados());
             ps.setDouble(6, obj.getPresupuestoTotal());
             ps.setString(7, obj.getEstado());
-            if (ps.executeUpdate() > 0) resp = true;
+            
+            if (ps.executeUpdate() > 0) {
+                resp = true;
+            }
             ps.close();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, e.getMessage());
+            JOptionPane.showMessageDialog(null, "Error al insertar evento: " + e.getMessage());
         } finally {
             ps = null;
             CON.desconectar();
@@ -88,8 +164,7 @@ public class EventoDAO implements CrudSimpleInterface<Evento> {
         resp = false;
         try {
             ps = CON.conectar().prepareStatement(
-                "UPDATE evento SET cliente_id=?, nombre_evento=?, fecha_evento=?, lugar_evento=?, " +
-                "numero_invitados=?, presupuesto_total=?, estado=? WHERE id=?"
+                "UPDATE evento SET cliente_id = ?, nombre_evento = ?, fecha_evento = ?, lugar_evento = ?, numero_invitados = ?, presupuesto_total = ?, estado = ? WHERE id = ?"
             );
             ps.setInt(1, obj.getClienteId());
             ps.setString(2, obj.getNombreEvento());
@@ -99,10 +174,13 @@ public class EventoDAO implements CrudSimpleInterface<Evento> {
             ps.setDouble(6, obj.getPresupuestoTotal());
             ps.setString(7, obj.getEstado());
             ps.setInt(8, obj.getId());
-            if (ps.executeUpdate() > 0) resp = true;
+            
+            if (ps.executeUpdate() > 0) {
+                resp = true;
+            }
             ps.close();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, e.getMessage());
+            JOptionPane.showMessageDialog(null, "Error al actualizar evento: " + e.getMessage());
         } finally {
             ps = null;
             CON.desconectar();
@@ -116,10 +194,12 @@ public class EventoDAO implements CrudSimpleInterface<Evento> {
         try {
             ps = CON.conectar().prepareStatement("UPDATE evento SET activo = 0 WHERE id = ?");
             ps.setInt(1, id);
-            if (ps.executeUpdate() > 0) resp = true;
+            if (ps.executeUpdate() > 0) {
+                resp = true;
+            }
             ps.close();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, e.getMessage());
+            JOptionPane.showMessageDialog(null, "Error al desactivar: " + e.getMessage());
         } finally {
             ps = null;
             CON.desconectar();
@@ -133,10 +213,12 @@ public class EventoDAO implements CrudSimpleInterface<Evento> {
         try {
             ps = CON.conectar().prepareStatement("UPDATE evento SET activo = 1 WHERE id = ?");
             ps.setInt(1, id);
-            if (ps.executeUpdate() > 0) resp = true;
+            if (ps.executeUpdate() > 0) {
+                resp = true;
+            }
             ps.close();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, e.getMessage());
+            JOptionPane.showMessageDialog(null, "Error al activar: " + e.getMessage());
         } finally {
             ps = null;
             CON.desconectar();
@@ -146,23 +228,25 @@ public class EventoDAO implements CrudSimpleInterface<Evento> {
 
     @Override
     public int total() {
-        int total = 0;
+        int totalRegistros = 0;
         try {
-            ps = CON.conectar().prepareStatement("SELECT COUNT(*) FROM evento WHERE activo = 1");
+            ps = CON.conectar().prepareStatement("SELECT COUNT(id) FROM evento WHERE activo = 1");
             rs = ps.executeQuery();
-            if (rs.next()) total = rs.getInt(1);
+            if (rs.next()) {
+                totalRegistros = rs.getInt(1);
+            }
             ps.close();
             rs.close();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, e.getMessage());
+            JOptionPane.showMessageDialog(null, "Error en total: " + e.getMessage());
         } finally {
             ps = null;
             rs = null;
             CON.desconectar();
         }
-        return total;
+        return totalRegistros;
     }
-    
+
     @Override
     public boolean existe(String texto) {
         resp = false;
@@ -176,7 +260,7 @@ public class EventoDAO implements CrudSimpleInterface<Evento> {
             ps.close();
             rs.close();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, e.getMessage());
+            JOptionPane.showMessageDialog(null, "Error en existe: " + e.getMessage());
         } finally {
             ps = null;
             rs = null;
@@ -184,15 +268,15 @@ public class EventoDAO implements CrudSimpleInterface<Evento> {
         }
         return resp;
     }
-
-    // Métodos adicionales que ya tienes y funcionan bien
+    
+    // ========== MÉTODOS ADICIONALES ==========
+    
     public Evento buscarPorId(int id) {
         Evento evento = null;
         try {
             ps = CON.conectar().prepareStatement(
-                "SELECT e.*, p.nombre as nombre_cliente FROM evento e " +
-                "INNER JOIN persona p ON e.cliente_id = p.id " +
-                "WHERE e.id = ?"
+                "SELECT e.*, p.nombre as cliente_nombre FROM evento e " +
+                "INNER JOIN persona p ON e.cliente_id = p.id WHERE e.id = ?"
             );
             ps.setInt(1, id);
             rs = ps.executeQuery();
@@ -200,7 +284,7 @@ public class EventoDAO implements CrudSimpleInterface<Evento> {
                 evento = new Evento();
                 evento.setId(rs.getInt("id"));
                 evento.setClienteId(rs.getInt("cliente_id"));
-                evento.setNombreCliente(rs.getString("nombre_cliente"));
+                evento.setNombreCliente(rs.getString("cliente_nombre"));
                 evento.setNombreEvento(rs.getString("nombre_evento"));
                 evento.setFechaEvento(rs.getString("fecha_evento"));
                 evento.setLugarEvento(rs.getString("lugar_evento"));
@@ -212,7 +296,7 @@ public class EventoDAO implements CrudSimpleInterface<Evento> {
             ps.close();
             rs.close();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, e.getMessage());
+            JOptionPane.showMessageDialog(null, "Error en buscarPorId: " + e.getMessage());
         } finally {
             ps = null;
             rs = null;
@@ -220,18 +304,20 @@ public class EventoDAO implements CrudSimpleInterface<Evento> {
         }
         return evento;
     }
-
+    
     public double obtenerPresupuesto(int eventoId) {
         double presupuesto = 0;
         try {
             ps = CON.conectar().prepareStatement("SELECT presupuesto_total FROM evento WHERE id = ?");
             ps.setInt(1, eventoId);
             rs = ps.executeQuery();
-            if (rs.next()) presupuesto = rs.getDouble("presupuesto_total");
+            if (rs.next()) {
+                presupuesto = rs.getDouble("presupuesto_total");
+            }
             ps.close();
             rs.close();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, e.getMessage());
+            JOptionPane.showMessageDialog(null, "Error en obtenerPresupuesto: " + e.getMessage());
         } finally {
             ps = null;
             rs = null;
